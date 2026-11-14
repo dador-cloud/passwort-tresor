@@ -6,5 +6,6 @@
 - [x] Alte Tresor-Dateien (Version 1) werden automatisch übernommen
 - [x] Installierbare App (Desktop-Symbol, läuft offline)
 - [x] Automatische Tests + Handy-Breiten
-- [ ] GitHub-Projekt anlegen + GitHub Pages einschalten (Rückfrage an Omar)
+- [x] GitHub-Projekt angelegt + Programm hochgeladen (14.11.2026)
+- [ ] GitHub Pages einschalten (macht Omar: Settings > Pages > main > Save)
 - [ ] YubiKeys mit Omar am echten PC testen

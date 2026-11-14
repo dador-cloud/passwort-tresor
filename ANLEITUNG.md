@@ -40,3 +40,6 @@ Im Datei-Explorer: Rechtsklick auf den OneDrive-Ordner **«Passwort-Tresor»** �
 - Den Ersatz-YubiKey zu Hause aufbewahren, nicht am Schlüsselbund.
 - `Passwort-Tresor.json` nie löschen oder umbenennen. Frühere Versionen: Rechtsklick auf die Datei → «Versionsverlauf».
 - Wurde die Datei gleichzeitig auf zwei PCs geändert, fragt die App, bevor sie etwas überschreibt.
+
+## Adresse der App
+https://dador-cloud.github.io/passwort-tresor/
