@@ -1,0 +1,42 @@
+# Passwort-Tresor – Anleitung
+
+Ihre Passwörter liegen verschlüsselt in **einer Datei auf OneDrive** (`Passwort-Tresor.json`).
+Ohne YubiKey oder Hauptpasswort ist diese Datei nur Zeichensalat.
+
+## Zwei Wege, denselben Tresor zu öffnen
+
+| | Installierte App (Alltag) | Reserve-Datei |
+|---|---|---|
+| Öffnen | Desktop-Symbol «Passwort-Tresor» | Doppelklick auf `Passwort-Tresor.html` im OneDrive-Ordner |
+| Entsperren | YubiKey berühren | Hauptpasswort |
+| Ohne Internet | ja | ja |
+
+## 1. App installieren (pro PC einmal)
+1. In **Edge** oder **Chrome** die Adresse der App öffnen (siehe unten).
+2. Oben rechts in der Adresszeile auf das Symbol **«App installieren»** klicken (Bildschirm mit Pfeil) und **«Installieren»** wählen.
+3. Fertig: Auf dem Desktop und im Startmenü erscheint «Passwort-Tresor».
+
+## 2. Tresor verbinden
+- **Erster PC, noch kein Tresor:** «Neuen Tresor anlegen» → Hauptpasswort zweimal eingeben → im Speicher-Fenster **OneDrive → Passwort-Tresor** wählen → «Speichern».
+- **Zweiter PC / Tresor schon vorhanden:** «Bestehenden Tresor öffnen» → in OneDrive die Datei `Passwort-Tresor.json` wählen → entsperren.
+- Fragt der Browser, ob die App die Datei bearbeiten darf: **«Bei jedem Besuch zulassen»** bzw. **«Zulassen»** wählen.
+
+## 3. YubiKeys einrichten (einmal, nicht pro PC)
+1. ⚙️ **Einstellungen** → «YubiKey hinzufügen».
+2. Namen eingeben, z. B. «YubiKey 5C NFC» → Knopf klicken → YubiKey einstecken und berühren, sobald er blinkt (evtl. zweimal).
+3. Für jeden YubiKey wiederholen (5C NFC, 5 Nano, Ersatzschlüssel).
+Die YubiKeys sind in der Tresor-Datei gespeichert und funktionieren dadurch automatisch auch auf dem zweiten PC.
+
+## 4. Einmal am Tag entsperren
+- Der Tresor bleibt **bis Mitternacht offen**, auch wenn Sie die App schliessen.
+- Er sperrt sich sofort, wenn Sie auf **🔒 Sperren** klicken.
+- Unter ⚙️ Einstellungen → **«Automatisch sperren, wenn der PC gesperrt wird» → Einschalten**: Dann sperrt Windows-Taste + L auch den Tresor (solange die App offen ist, auch minimiert).
+
+## 5. Ohne Internet
+Im Datei-Explorer: Rechtsklick auf den OneDrive-Ordner **«Passwort-Tresor»** → **«Immer auf diesem Gerät behalten»** (grüner Kreis mit weissem Häkchen).
+
+## Wichtig
+- **Hauptpasswort auf Papier** notieren und zu Hause sicher aufbewahren. Es ist der Notfall-Schlüssel, falls alle YubiKeys weg sind.
+- Den Ersatz-YubiKey zu Hause aufbewahren, nicht am Schlüsselbund.
+- `Passwort-Tresor.json` nie löschen oder umbenennen. Frühere Versionen: Rechtsklick auf die Datei → «Versionsverlauf».
+- Wurde die Datei gleichzeitig auf zwei PCs geändert, fragt die App, bevor sie etwas überschreibt.

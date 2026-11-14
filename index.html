@@ -1,0 +1,762 @@
+<!doctype html>
+<html lang="de-CH">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#1f5fbf">
+<title>Passwort-Tresor</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<style>
+:root{
+  --bg:#f4f6f9; --card:#fff; --text:#1c2430; --muted:#5d6878; --line:#dde2ea;
+  --accent:#1f5fbf; --accent-text:#fff; --ok:#1e7d3c; --warn:#a15c00; --danger:#b3261e;
+  --field:#fff; --shadow:0 1px 3px rgba(0,0,0,.08);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#12161c; --card:#1c222b; --text:#e8edf4; --muted:#a3adbb; --line:#2e3744;
+    --accent:#5b9bff; --accent-text:#0b1220; --ok:#5fcf86; --warn:#f0b35a; --danger:#ff7b72;
+    --field:#141920; --shadow:none;
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--text);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overflow-x:hidden}
+.wrap{max-width:760px;margin:0 auto;padding:16px}
+h1{font-size:1.5rem;margin:8px 0 4px}
+h2{font-size:1.15rem;margin:0 0 12px}
+h3{font-size:1rem;margin:16px 0 8px}
+p{margin:0 0 12px}
+.muted{color:var(--muted)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;box-shadow:var(--shadow);margin-bottom:14px}
+label{display:block;font-weight:600;margin:10px 0 4px}
+input,textarea{width:100%;font:inherit;color:var(--text);background:var(--field);border:1px solid var(--line);border-radius:8px;padding:10px 12px;min-height:44px}
+textarea{min-height:80px;resize:vertical}
+input:focus,textarea:focus,button:focus-visible{outline:3px solid color-mix(in srgb,var(--accent) 45%,transparent);outline-offset:1px}
+button{font:inherit;cursor:pointer;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--text);padding:9px 14px;min-height:44px;min-width:44px}
+button:disabled{opacity:.6;cursor:wait}
+button.primary{background:var(--accent);color:var(--accent-text);border-color:var(--accent);font-weight:600}
+button.danger{color:var(--danger);border-color:var(--danger)}
+button.small{min-height:36px;padding:5px 10px;font-size:.9rem}
+button.big{font-size:1.05rem;padding:12px 18px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.row.stretch>*{flex:1 1 160px}
+.pwrow{display:flex;gap:6px}
+.pwrow input{flex:1;min-width:0}
+.hidden{display:none!important}
+.msg{padding:10px 12px;border-radius:8px;margin:10px 0;font-size:.95rem}
+.msg.err{background:color-mix(in srgb,var(--danger) 14%,transparent);color:var(--danger)}
+.msg.warn{background:color-mix(in srgb,var(--warn) 16%,transparent);color:var(--warn)}
+.msg.ok{background:color-mix(in srgb,var(--ok) 14%,transparent);color:var(--ok)}
+.msg.info{background:color-mix(in srgb,var(--accent) 12%,transparent);color:var(--text)}
+.or{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:.9rem;margin:16px 0 4px}
+.or::before,.or::after{content:"";flex:1;height:1px;background:var(--line)}
+.top{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:12px}
+.status{font-size:.9rem;color:var(--muted);overflow-wrap:anywhere}
+.status.ok{color:var(--ok)} .status.warn{color:var(--warn)}
+.entry{display:flex;flex-direction:column;gap:8px}
+.entry .name{font-weight:700;font-size:1.05rem;overflow-wrap:anywhere}
+.entry .meta{color:var(--muted);font-size:.92rem;overflow-wrap:anywhere}
+.entry .pw{font-family:ui-monospace,Consolas,monospace;overflow-wrap:anywhere}
+.entry .note{white-space:pre-wrap;font-size:.92rem;overflow-wrap:anywhere}
+.empty{text-align:center;color:var(--muted);padding:24px 8px}
+.keyitem{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:10px 0;border-bottom:1px solid var(--line)}
+.keyitem:last-child{border-bottom:0}
+.keyitem .k{overflow-wrap:anywhere;min-width:0;flex:1 1 180px}
+dialog{border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--text);padding:16px;width:min(580px,calc(100vw - 24px));max-height:calc(100vh - 24px)}
+dialog::backdrop{background:rgba(0,0,0,.45)}
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--text);color:var(--bg);padding:10px 16px;border-radius:8px;max-width:calc(100vw - 32px);text-align:center;z-index:10}
+.strength{height:6px;border-radius:3px;background:var(--line);margin-top:6px;overflow:hidden}
+.strength>div{height:100%;width:0;transition:width .2s}
+footer{font-size:.85rem;color:var(--muted);text-align:center;margin:20px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- ===== Start ===== -->
+<section id="scrStart">
+  <h1>🔐 Passwort-Tresor</h1>
+  <p class="muted">Ihre Passwörter, verschlüsselt in einer Datei auf Ihrem OneDrive.</p>
+
+  <!-- Heute schon entsperrt -->
+  <div id="sessBox" class="card hidden">
+    <h2>Tresor ist heute schon entsperrt</h2>
+    <p class="muted">Datei: <strong class="lastName"></strong></p>
+    <button id="btnSess" class="primary big">Tresor öffnen</button>
+    <div id="errSess" class="msg err hidden"></div>
+  </div>
+
+  <!-- Entsperren (bekannte Datei) -->
+  <div id="lastBox" class="card hidden">
+    <h2>Tresor entsperren</h2>
+    <p class="muted">Datei: <strong class="lastName"></strong></p>
+    <div class="yk-only">
+      <button id="btnYkLast" class="primary big" style="width:100%">🔑 Mit YubiKey entsperren</button>
+      <p class="muted" style="font-size:.9rem;margin:6px 0 0">YubiKey einstecken, auf den Knopf klicken und dann den YubiKey berühren, sobald er blinkt.</p>
+      <div class="or">oder mit Hauptpasswort</div>
+    </div>
+    <form id="fUnlockLast">
+      <label for="pwLast">Hauptpasswort</label>
+      <div class="pwrow"><input id="pwLast" type="password" autocomplete="current-password" required><button type="button" class="eye" data-for="pwLast" aria-label="Passwort anzeigen">👁</button></div>
+      <div class="row" style="margin-top:12px"><button class="primary" type="submit">Entsperren</button></div>
+    </form>
+    <div id="errLast" class="msg err hidden"></div>
+  </div>
+
+  <div class="card">
+    <h2 id="pickTitle">Tresor-Datei auswählen</h2>
+    <div class="row stretch">
+      <button id="btnOpen">Anderen Tresor öffnen</button>
+      <button id="btnNew">Neuen Tresor anlegen</button>
+    </div>
+    <input id="fileInput" type="file" accept=".json,application/json,text/plain" class="hidden">
+    <p id="modeHint" class="muted" style="margin-top:12px;font-size:.92rem"></p>
+  </div>
+</section>
+
+<!-- ===== Neu anlegen ===== -->
+<section id="scrNew" class="hidden">
+  <h1>Neuen Tresor anlegen</h1>
+  <div class="card">
+    <div class="msg warn">Das <strong>Hauptpasswort</strong> ist Ihr Notfall-Schlüssel. Wählen Sie etwas, das Sie sich merken können, z. B. einen kurzen Satz wie «Mein Hund Bello frisst 3 Rüebli!». <strong>Ohne Hauptpasswort und ohne YubiKey kann niemand die Passwörter wiederherstellen.</strong> Schreiben Sie es auf Papier und bewahren Sie es zu Hause sicher auf.</div>
+    <form id="fNew">
+      <label for="pwNew1">Hauptpasswort (mind. 10 Zeichen)</label>
+      <div class="pwrow"><input id="pwNew1" type="password" autocomplete="new-password" minlength="10" required><button type="button" class="eye" data-for="pwNew1" aria-label="Passwort anzeigen">👁</button></div>
+      <div class="strength"><div id="strBar"></div></div>
+      <label for="pwNew2">Hauptpasswort wiederholen</label>
+      <input id="pwNew2" type="password" autocomplete="new-password" required>
+      <div id="errNew" class="msg err hidden"></div>
+      <p class="muted" id="newHint" style="margin-top:12px;font-size:.92rem"></p>
+      <div class="row" style="margin-top:8px">
+        <button class="primary" type="submit">Tresor anlegen</button>
+        <button type="button" class="back">Zurück</button>
+      </div>
+    </form>
+  </div>
+</section>
+
+<!-- ===== Entsperren (nach Datei-Auswahl) ===== -->
+<section id="scrUnlock" class="hidden">
+  <h1>Tresor entsperren</h1>
+  <div class="card">
+    <p class="muted">Datei: <strong id="unlockName"></strong></p>
+    <div class="yk-only">
+      <button id="btnYkUnlock" class="primary big" style="width:100%">🔑 Mit YubiKey entsperren</button>
+      <div class="or">oder mit Hauptpasswort</div>
+    </div>
+    <form id="fUnlock">
+      <label for="pwUnlock">Hauptpasswort</label>
+      <div class="pwrow"><input id="pwUnlock" type="password" autocomplete="current-password" required><button type="button" class="eye" data-for="pwUnlock" aria-label="Passwort anzeigen">👁</button></div>
+      <div class="row" style="margin-top:12px">
+        <button class="primary" type="submit">Entsperren</button>
+        <button type="button" class="back">Zurück</button>
+      </div>
+    </form>
+    <div id="errUnlock" class="msg err hidden"></div>
+  </div>
+</section>
+
+<!-- ===== Hauptansicht ===== -->
+<section id="scrMain" class="hidden">
+  <div class="top">
+    <div style="min-width:0">
+      <h1 style="margin:0">🔐 Passwort-Tresor</h1>
+      <div id="status" class="status"></div>
+    </div>
+    <div class="row">
+      <button id="btnSettings" class="small">⚙️ Einstellungen</button>
+      <button id="btnLock" class="small">🔒 Sperren</button>
+    </div>
+  </div>
+  <div id="ykBanner" class="msg info hidden">
+    <div style="margin-bottom:8px">Noch kein YubiKey eingerichtet. Mit YubiKey müssen Sie kein Passwort mehr eintippen.</div>
+    <button id="btnYkBanner" class="primary small">YubiKey einrichten</button>
+  </div>
+  <div id="saveBar" class="msg warn hidden">
+    <div style="margin-bottom:8px">Änderungen sind noch nicht auf OneDrive gespeichert.</div>
+    <button id="btnSaveManual" class="primary small">Datei jetzt speichern</button>
+  </div>
+  <div class="row" style="margin-bottom:14px">
+    <input id="search" type="search" placeholder="Suchen, z. B. «Bank»" aria-label="Suchen" style="flex:1 1 180px;min-width:0">
+    <button id="btnAdd" class="primary">+ Neues Passwort</button>
+  </div>
+  <div id="list"></div>
+</section>
+
+<footer id="foot">Alles wird nur auf Ihrem Gerät ver- und entschlüsselt (AES-256). Nichts wird an Dritte gesendet.<br>Der Tresor bleibt bis Mitternacht offen, ausser Sie sperren ihn oder sperren den PC.</footer>
+</div>
+
+<!-- ===== Eintrag bearbeiten ===== -->
+<dialog id="dlg">
+  <form id="fEntry" method="dialog">
+    <h2 id="dlgTitle">Neues Passwort</h2>
+    <label for="eName">Wofür? (z. B. «PostFinance», «Swisscom»)</label>
+    <input id="eName" required autocomplete="off">
+    <label for="eUser">Benutzername / E-Mail</label>
+    <input id="eUser" autocomplete="off">
+    <label for="ePw">Passwort</label>
+    <div class="pwrow"><input id="ePw" type="password" autocomplete="off"><button type="button" class="eye" data-for="ePw" aria-label="Passwort anzeigen">👁</button></div>
+    <div class="row" style="margin-top:6px"><button type="button" id="btnGen" class="small">🎲 Sicheres Passwort erzeugen</button></div>
+    <label for="eUrl">Webseite (optional)</label>
+    <input id="eUrl" autocomplete="off" inputmode="url">
+    <label for="eNote">Notiz (optional)</label>
+    <textarea id="eNote"></textarea>
+    <div class="row" style="margin-top:14px;justify-content:space-between">
+      <div class="row"><button type="submit" class="primary" value="save">Speichern</button><button type="button" id="btnCancel">Abbrechen</button></div>
+      <button type="button" id="btnDelete" class="danger">Löschen</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- ===== Einstellungen ===== -->
+<dialog id="dlgSet">
+  <h2>⚙️ Einstellungen</h2>
+
+  <h3>Schlüssel, die den Tresor öffnen</h3>
+  <div id="keyList"></div>
+
+  <div id="reauthBox" class="msg info hidden">
+    <div style="margin-bottom:8px">Zur Sicherheit bitte zuerst bestätigen, dass Sie es sind:</div>
+    <div class="row yk-only" style="margin-bottom:8px"><button id="btnReauthYk" class="small primary">🔑 Mit YubiKey bestätigen</button></div>
+    <form id="fReauth" class="pwrow"><input id="pwReauth" type="password" placeholder="oder Hauptpasswort" aria-label="Hauptpasswort" autocomplete="current-password"><button class="small" type="submit">OK</button></form>
+    <div id="errReauth" class="msg err hidden"></div>
+  </div>
+
+  <div class="yk-only">
+    <h3>YubiKey hinzufügen</h3>
+    <form id="fAddYk">
+      <label for="ykLabel">Name für diesen YubiKey</label>
+      <input id="ykLabel" placeholder="z. B. «YubiKey 5C NFC (Schlüsselbund)»" required autocomplete="off">
+      <p class="muted" style="font-size:.9rem;margin:6px 0">Nach dem Klick den YubiKey einstecken und berühren, sobald er blinkt. Eventuell zweimal.</p>
+      <button class="primary" type="submit">YubiKey hinzufügen</button>
+    </form>
+    <div id="msgAddYk" class="msg hidden"></div>
+  </div>
+  <p class="no-yk muted hidden" style="font-size:.92rem">YubiKeys lassen sich nur in der installierten App einrichten und verwenden. In dieser Reserve-Version öffnen Sie den Tresor mit dem Hauptpasswort.</p>
+
+  <h3>Hauptpasswort ändern</h3>
+  <form id="fChPw">
+    <label for="pwCh1">Neues Hauptpasswort (mind. 10 Zeichen)</label>
+    <div class="pwrow"><input id="pwCh1" type="password" autocomplete="new-password" minlength="10" required><button type="button" class="eye" data-for="pwCh1" aria-label="Passwort anzeigen">👁</button></div>
+    <label for="pwCh2">Wiederholen</label>
+    <input id="pwCh2" type="password" autocomplete="new-password" required>
+    <div class="row" style="margin-top:10px"><button type="submit">Hauptpasswort ändern</button></div>
+  </form>
+  <div id="msgChPw" class="msg hidden"></div>
+
+  <h3>Automatisch sperren, wenn der PC gesperrt wird</h3>
+  <p id="idleState" class="muted" style="font-size:.92rem"></p>
+  <button id="btnIdle" class="small">Einschalten</button>
+
+  <h3>Notfall-Liste</h3>
+  <p class="muted" style="font-size:.92rem">Alle Passwörter auf Papier, für den Tresor zu Hause.</p>
+  <button id="btnPrint" class="small">🖨 Drucken</button>
+
+  <div class="row" style="margin-top:20px;justify-content:flex-end"><button id="btnSetClose" class="primary">Schliessen</button></div>
+  <p class="muted" style="font-size:.8rem;margin-top:12px">Passwort-Tresor Version <span id="ver"></span></p>
+</dialog>
+
+<div id="toast" class="toast hidden" role="status"></div>
+
+<script>
+"use strict";
+const VERSION = '2.0 (14.11.2026)';
+const $ = id => document.getElementById(id);
+const FS = 'showOpenFilePicker' in window && 'showSaveFilePicker' in window;
+const YK = (location.protocol === 'https:' || location.hostname === 'localhost') && !!window.PublicKeyCredential;
+const ITER = 600000;
+const FILE_TYPES = [{description:'Passwort-Tresor', accept:{'application/json':['.json']}}];
+
+/* Zustand: dek = Datenschlüssel (CryptoKey), dekRaw = nur vorhanden direkt nach Entsperren mit Passwort/YubiKey */
+let S;
+function resetState(){ S = { handle:null, fileName:'', fileText:'', vault:null, dek:null, dekRaw:null, entries:[], dirty:false, lastMod:0, editId:null }; }
+resetState();
+
+/* ---------- Hilfsfunktionen ---------- */
+const enc = new TextEncoder(), dec = new TextDecoder();
+const b64 = buf => { const a = new Uint8Array(buf); let s=''; for (let i=0;i<a.length;i+=0x8000) s += String.fromCharCode(...a.subarray(i,i+0x8000)); return btoa(s); };
+const unb64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+const b64url = buf => b64(buf).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+const rnd = n => crypto.getRandomValues(new Uint8Array(n));
+function show(id){ ['scrStart','scrNew','scrUnlock','scrMain'].forEach(s => $(s).classList.toggle('hidden', s !== id)); }
+function msg(id, text, cls='err'){ const e=$(id); e.textContent=text||''; e.className='msg ' + cls + (text ? '' : ' hidden'); }
+const err = (id, t) => msg(id, t, 'err');
+let toastT; function toast(t){ const e=$('toast'); e.textContent=t; e.classList.remove('hidden'); clearTimeout(toastT); toastT=setTimeout(()=>e.classList.add('hidden'),2500); }
+function esc(s){ return String(s??'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function timeNow(){ return new Date().toLocaleTimeString('de-CH',{hour:'2-digit',minute:'2-digit'}); }
+function nextMidnight(){ const d = new Date(); d.setHours(24,0,0,0); return d.getTime(); }
+async function busy(btn, text, fn){ const old = btn.textContent; btn.disabled = true; btn.textContent = text; try { return await fn(); } finally { btn.disabled = false; btn.textContent = old; } }
+
+/* ---------- Verschlüsselung ----------
+   Ein zufälliger Datenschlüssel (DEK) verschlüsselt die Passwörter.
+   Der DEK ist mehrfach «eingepackt»: einmal mit dem Hauptpasswort, einmal pro YubiKey. */
+async function pwKek(pw, salt, iter){
+  const base = await crypto.subtle.importKey('raw', enc.encode(pw), 'PBKDF2', false, ['deriveKey']);
+  return crypto.subtle.deriveKey({name:'PBKDF2', salt, iterations:iter, hash:'SHA-256'}, base, {name:'AES-GCM', length:256}, false, ['encrypt','decrypt']);
+}
+async function prfKek(prfOut){
+  const base = await crypto.subtle.importKey('raw', prfOut, 'HKDF', false, ['deriveKey']);
+  return crypto.subtle.deriveKey({name:'HKDF', hash:'SHA-256', salt:new Uint8Array(32), info:enc.encode('Passwort-Tresor YubiKey')}, base, {name:'AES-GCM', length:256}, false, ['encrypt','decrypt']);
+}
+async function wrap(kek, raw){ const iv = rnd(12); return { iv:b64(iv), wrapped:b64(await crypto.subtle.encrypt({name:'AES-GCM', iv}, kek, raw)) }; }
+async function unwrap(kek, k){ return new Uint8Array(await crypto.subtle.decrypt({name:'AES-GCM', iv:unb64(k.iv)}, kek, unb64(k.wrapped))); }
+const importDek = (raw, extractable=false) => crypto.subtle.importKey('raw', raw, 'AES-GCM', extractable, ['encrypt','decrypt']);
+async function pwKeyEntry(pw, raw){ const salt = rnd(16); return { type:'pw', salt:b64(salt), iterations:ITER, ...(await wrap(await pwKek(pw, salt, ITER), raw)) }; }
+
+function parseVault(text){
+  let o; try { o = JSON.parse(text); } catch { throw new Error('Diese Datei ist keine Tresor-Datei.'); }
+  if (o.app !== 'Passwort-Tresor') throw new Error('Diese Datei ist keine Tresor-Datei.');
+  return o;
+}
+async function decryptEntries(dek, v){
+  try { return JSON.parse(dec.decode(await crypto.subtle.decrypt({name:'AES-GCM', iv:unb64(v.iv)}, dek, unb64(v.data)))).entries || []; }
+  catch { throw new Error('Die Tresor-Datei passt nicht zum Schlüssel (oder ist beschädigt).'); }
+}
+async function sealVault(){
+  const iv = rnd(12);
+  const ct = await crypto.subtle.encrypt({name:'AES-GCM', iv}, S.dek, enc.encode(JSON.stringify({entries:S.entries})));
+  return JSON.stringify({app:'Passwort-Tresor', version:2, keys:S.vault.keys, iv:b64(iv), data:b64(ct), saved:new Date().toISOString()}, null, 1);
+}
+
+/* Entsperren mit Hauptpasswort (auch alte Version-1-Dateien) */
+async function unlockWithPw(v, pw){
+  if (v.version === 1 || !v.keys){
+    const kek = await pwKek(pw, unb64(v.salt), v.iterations || ITER);
+    let plain; try { plain = await crypto.subtle.decrypt({name:'AES-GCM', iv:unb64(v.iv)}, kek, unb64(v.data)); } catch { throw new Error('Das Hauptpasswort ist falsch.'); }
+    const entries = JSON.parse(dec.decode(plain)).entries || [];
+    const raw = rnd(32);                       // Umstellung auf Version 2
+    S.vault = { keys:[await pwKeyEntry(pw, raw)] };
+    return { raw, entries, migrated:true };
+  }
+  const k = v.keys.find(x => x.type === 'pw');
+  if (!k) throw new Error('Für diesen Tresor ist kein Hauptpasswort hinterlegt.');
+  let raw; try { raw = await unwrap(await pwKek(pw, unb64(k.salt), k.iterations), k); } catch { throw new Error('Das Hauptpasswort ist falsch.'); }
+  S.vault = v;
+  return { raw, entries: await decryptEntries(await importDek(raw), v) };
+}
+
+/* ---------- YubiKey (WebAuthn mit PRF) ---------- */
+function ykKeys(v){ return (v.keys||[]).filter(k => k.type === 'yubikey' && k.rpId === location.hostname); }
+function ykError(e){
+  if (e.name === 'NotAllowedError') return 'Abgebrochen oder Zeit abgelaufen. Bitte nochmals versuchen und den YubiKey berühren, sobald er blinkt.';
+  if (e.name === 'InvalidStateError') return 'Dieser YubiKey ist bereits eingerichtet.';
+  return e.message;
+}
+async function ykGet(keys){
+  const evalBy = {}; keys.forEach(k => evalBy[k.credId] = { first: unb64(k.prfSalt) });
+  const cred = await navigator.credentials.get({ publicKey:{
+    challenge: rnd(32), rpId: location.hostname, timeout: (window.__ykTimeout||90000), userVerification:'discouraged',
+    allowCredentials: keys.map(k => ({type:'public-key', id: unb64(k.credIdStd), transports:['usb','nfc']})),
+    extensions:{ prf:{ evalByCredential: evalBy } } } });
+  const id = b64url(cred.rawId);
+  const k = keys.find(x => x.credId === id);
+  const out = cred.getClientExtensionResults().prf?.results?.first;
+  if (!k) throw new Error('Dieser YubiKey ist für diesen Tresor nicht eingerichtet.');
+  if (!out) throw new Error('Der Browser hat den Schlüssel vom YubiKey nicht geliefert. Bitte aktuelle Version von Edge oder Chrome verwenden.');
+  return { k, out };
+}
+async function unlockWithYk(v){
+  const keys = ykKeys(v);
+  if (!keys.length) throw new Error('Für diesen Tresor ist noch kein YubiKey eingerichtet. Bitte mit dem Hauptpasswort entsperren und dann unter «Einstellungen» einen YubiKey hinzufügen.');
+  const { k, out } = await ykGet(keys);
+  let raw; try { raw = await unwrap(await prfKek(out), k); } catch { throw new Error('Der YubiKey passt nicht zu diesem Tresor.'); }
+  S.vault = v;
+  return { raw, entries: await decryptEntries(await importDek(raw), v) };
+}
+async function addYubiKey(label){
+  const prfSalt = rnd(32);
+  const existing = ykKeys(S.vault);
+  const cred = await navigator.credentials.create({ publicKey:{
+    rp:{ name:'Passwort-Tresor', id: location.hostname },
+    user:{ id: rnd(16), name:'Passwort-Tresor', displayName:'Passwort-Tresor' },
+    challenge: rnd(32), timeout: (window.__ykTimeout||90000), attestation:'none',
+    pubKeyCredParams:[{type:'public-key', alg:-8},{type:'public-key', alg:-7},{type:'public-key', alg:-257}],
+    authenticatorSelection:{ authenticatorAttachment:'cross-platform', residentKey:'discouraged', requireResidentKey:false, userVerification:'discouraged' },
+    excludeCredentials: existing.map(k => ({type:'public-key', id: unb64(k.credIdStd)})),
+    hints:['security-key'],
+    extensions:{ prf:{ eval:{ first: prfSalt } } } } });
+  const ext = cred.getClientExtensionResults().prf;
+  if (!ext || ext.enabled === false) throw new Error('Dieser YubiKey oder Browser unterstützt die nötige Funktion nicht. Bitte aktuelle Version von Edge oder Chrome verwenden.');
+  const entry = { type:'yubikey', label, rpId: location.hostname, credId: b64url(cred.rawId), credIdStd: b64(cred.rawId), prfSalt: b64(prfSalt), added: new Date().toISOString() };
+  let out = ext.results?.first;
+  if (!out){ // Manche Browser liefern den Schlüssel erst bei einer zweiten Berührung
+    toast('Bitte den YubiKey nochmals berühren');
+    const r = await ykGet([entry]); out = r.out;
+  }
+  Object.assign(entry, await wrap(await prfKek(out), S.dekRaw));
+  S.vault.keys.push(entry);
+}
+
+/* ---------- Kleine Datenbank im Browser (Datei-Verknüpfung + Tages-Entsperrung) ---------- */
+function idb(){ return new Promise((res, rej) => { const r = indexedDB.open('pwtresor', 1); r.onupgradeneeded = () => r.result.createObjectStore('kv'); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); }); }
+async function kvSet(k, v){ try { const db = await idb(); await new Promise(r => { const t = db.transaction('kv','readwrite'); t.objectStore('kv').put(v, k); t.oncomplete = r; t.onerror = r; }); } catch {} }
+async function kvDel(k){ try { const db = await idb(); await new Promise(r => { const t = db.transaction('kv','readwrite'); t.objectStore('kv').delete(k); t.oncomplete = r; t.onerror = r; }); } catch {} }
+async function kvGet(k){ try { const db = await idb(); return await new Promise(res => { const q = db.transaction('kv').objectStore('kv').get(k); q.onsuccess = () => res(q.result); q.onerror = () => res(null); }); } catch { return null; } }
+
+/* Tages-Entsperrung: nicht auslesbarer Schlüssel, gültig bis Mitternacht */
+async function saveSession(){ if (S.handle) await kvSet('session', { dek: S.dek, expires: nextMidnight(), fileName: S.fileName }); }
+async function getSession(){ const s = await kvGet('session'); if (!s) return null; if (s.expires < Date.now()){ await kvDel('session'); return null; } return s; }
+
+async function ensurePermission(h){
+  const opt = {mode:'readwrite'};
+  if ((await h.queryPermission(opt)) === 'granted') return true;
+  return (await h.requestPermission(opt)) === 'granted';
+}
+
+/* ---------- Speichern ---------- */
+function setStatus(cls, text){ const s=$('status'); s.className='status ' + cls; s.textContent=text; }
+async function save(){
+  const text = await sealVault();
+  S.fileText = text;
+  if (S.handle){
+    try {
+      const f = await S.handle.getFile();
+      if (S.lastMod && f.lastModified > S.lastMod + 2000){
+        if (!confirm('Die Tresor-Datei wurde inzwischen auf einem anderen Gerät geändert.\n\nOK = trotzdem überschreiben\nAbbrechen = nicht speichern und neu laden (Ihre letzte Änderung geht verloren)')){ await reloadFromFile(); return; }
+      }
+      const w = await S.handle.createWritable();
+      await w.write(text); await w.close();
+      S.lastMod = (await S.handle.getFile()).lastModified;
+      S.dirty = false; setStatus('ok', '✓ Gespeichert um ' + timeNow() + ' in «' + S.fileName + '»');
+    } catch(e){ S.dirty = true; setStatus('warn', '⚠ Speichern fehlgeschlagen: ' + e.message); }
+  } else { S.dirty = true; setStatus('warn', '⚠ Nicht gespeichert'); }
+  $('saveBar').classList.toggle('hidden', !S.dirty);
+}
+async function reloadFromFile(){
+  const f = await S.handle.getFile(); S.fileText = await f.text(); S.lastMod = f.lastModified;
+  const v = parseVault(S.fileText); S.vault = v; S.entries = await decryptEntries(S.dek, v); render();
+  setStatus('ok', 'Neu geladen um ' + timeNow());
+}
+async function saveManual(){
+  if (S.handle){ await save(); return; }
+  const text = S.fileText || await sealVault();
+  const file = new File([text], S.fileName || 'Passwort-Tresor.json', {type:'application/json'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(file); a.download = file.name; a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 5000);
+  S.dirty=false; $('saveBar').classList.add('hidden'); setStatus('ok','✓ Heruntergeladen. Bitte in den OneDrive-Ordner verschieben.');
+}
+
+/* ---------- Start ---------- */
+async function initStart(){
+  resetState(); show('scrStart');
+  document.querySelectorAll('.yk-only').forEach(e => e.classList.toggle('hidden', !YK));
+  document.querySelectorAll('.no-yk').forEach(e => e.classList.toggle('hidden', YK));
+  $('modeHint').textContent = FS
+    ? 'Tipp: Speichern Sie die Tresor-Datei in Ihrem OneDrive-Ordner. Jede Änderung wird sofort dort gespeichert und von OneDrive automatisch hochgeladen.'
+    : 'Hinweis: Dieser Browser kann nicht direkt in Dateien speichern. Bitte Microsoft Edge oder Google Chrome verwenden.';
+  ['sessBox','lastBox'].forEach(id => $(id).classList.add('hidden'));
+  err('errSess'); err('errLast'); $('pickTitle').textContent = 'Tresor-Datei auswählen'; $('btnOpen').textContent = 'Bestehenden Tresor öffnen';
+  if (!FS) return;
+  const h = await kvGet('lastHandle');
+  if (!h) return;
+  S.handle = h; S.fileName = h.name;
+  document.querySelectorAll('.lastName').forEach(e => e.textContent = h.name);
+  $('pickTitle').textContent = 'Andere Datei'; $('btnOpen').textContent = 'Anderen Tresor öffnen';
+  const sess = await getSession();
+  if (sess && sess.fileName === h.name){
+    // Heute schon entsperrt: wenn der Browser die Datei-Erlaubnis noch hat, direkt öffnen
+    try { if ((await h.queryPermission({mode:'readwrite'})) === 'granted') return openSession(sess); } catch {}
+    $('sessBox').classList.remove('hidden');
+    return;
+  }
+  $('lastBox').classList.remove('hidden');
+  if (!YK) setTimeout(()=>$('pwLast').focus(), 50);
+}
+async function openSession(sess){
+  try {
+    if (!(await ensurePermission(S.handle))) throw new Error('Bitte «Datei bearbeiten» erlauben, sonst kann der Tresor nicht speichern.');
+    const f = await S.handle.getFile(); S.fileText = await f.text(); S.lastMod = f.lastModified;
+    const v = parseVault(S.fileText);
+    S.entries = await decryptEntries(sess.dek, v); S.vault = v; S.dek = sess.dek; S.dekRaw = null;
+    enterMain(); setStatus('ok', '✓ Verbunden mit «' + S.fileName + '»');
+  } catch(x){
+    if (x.name === 'NotFoundError'){ await kvDel('session'); }
+    $('sessBox').classList.remove('hidden');
+    err('errSess', x.name === 'NotFoundError' ? 'Die Datei wurde nicht gefunden (verschoben oder umbenannt?). Bitte «Anderen Tresor öffnen» wählen.' : x.message);
+    if (/passt nicht/.test(x.message)){ await kvDel('session'); $('sessBox').classList.add('hidden'); $('lastBox').classList.remove('hidden'); }
+  }
+}
+$('btnSess').onclick = async () => { const s = await getSession(); if (s) openSession(s); else initStart(); };
+
+$('btnNew').onclick = () => { err('errNew'); $('fNew').reset(); $('strBar').style.width='0';
+  $('newHint').textContent = FS ? 'Nach dem Klick auf «Tresor anlegen» wählen Sie den Speicherort: links «OneDrive» anklicken, in den Ordner «Passwort-Tresor» gehen und speichern.' : 'Nach dem Anlegen speichern Sie die Datei mit dem Knopf «Datei jetzt speichern» in OneDrive.';
+  show('scrNew'); $('pwNew1').focus(); };
+document.querySelectorAll('.back').forEach(b => b.onclick = initStart);
+
+function strength(v){ let s=Math.min(v.length,20)*4; if(/[A-Z]/.test(v)&&/[a-z]/.test(v)) s+=10; if(/\d/.test(v)) s+=5; if(/[^A-Za-z0-9]/.test(v)) s+=5; return Math.min(s,100); }
+$('pwNew1').oninput = e => { const s = strength(e.target.value); const bar=$('strBar'); bar.style.width=s+'%'; bar.style.background = s<50 ? 'var(--danger)' : s<80 ? 'var(--warn)' : 'var(--ok)'; };
+
+$('fNew').onsubmit = async e => {
+  e.preventDefault(); err('errNew');
+  const p1=$('pwNew1').value, p2=$('pwNew2').value;
+  if (p1.length < 10) return err('errNew','Das Hauptpasswort muss mindestens 10 Zeichen lang sein.');
+  if (p1 !== p2) return err('errNew','Die beiden Passwörter stimmen nicht überein.');
+  if (FS){
+    try { S.handle = await showSaveFilePicker({suggestedName:'Passwort-Tresor.json', types:FILE_TYPES}); }
+    catch(x){ if (x.name !== 'AbortError') err('errNew','Datei konnte nicht angelegt werden: ' + x.message); return; }
+    S.fileName = S.handle.name; await kvSet('lastHandle', S.handle);
+  } else S.fileName = 'Passwort-Tresor.json';
+  const btn = e.submitter || $('fNew').querySelector('[type=submit]');
+  await busy(btn, 'Wird angelegt …', async () => {
+    const raw = rnd(32);
+    S.vault = { keys:[await pwKeyEntry(p1, raw)] };
+    S.dekRaw = raw; S.dek = await importDek(raw); S.entries = [];
+    enterMain(); await save(); await saveSession();
+  });
+};
+
+$('btnOpen').onclick = async () => {
+  await kvDel('session');
+  if (FS){
+    let h;
+    try { [h] = await showOpenFilePicker({types:FILE_TYPES}); }
+    catch(x){ if (x.name !== 'AbortError') alert('Datei konnte nicht geöffnet werden: ' + x.message); return; }
+    resetState(); S.handle = h; S.fileName = h.name; await kvSet('lastHandle', h);
+  } else { $('fileInput').value=''; $('fileInput').click(); return; }
+  gotoUnlock();
+};
+$('fileInput').onchange = async e => {
+  const f = e.target.files[0]; if (!f) return;
+  resetState(); S.fileName = f.name; S.fileText = await f.text(); gotoUnlock();
+};
+function gotoUnlock(){ $('unlockName').textContent = S.fileName; err('errUnlock'); $('fUnlock').reset(); show('scrUnlock'); if (!YK) $('pwUnlock').focus(); }
+
+/* Gemeinsamer Entsperr-Ablauf: method = (vault) => {raw, entries, migrated?} */
+async function doUnlock(method, errId, btn, busyText){
+  err(errId);
+  await busy(btn, busyText, async () => {
+    try {
+      if (S.handle){
+        if (!(await ensurePermission(S.handle))) throw new Error('Ohne Erlaubnis kann der Tresor nicht speichern. Bitte «Datei bearbeiten» erlauben.');
+        const f = await S.handle.getFile(); S.fileText = await f.text(); S.lastMod = f.lastModified;
+      }
+      const r = await method(parseVault(S.fileText));
+      S.dekRaw = r.raw; S.dek = await importDek(r.raw); S.entries = r.entries;
+      enterMain(); setStatus('ok', S.handle ? '✓ Verbunden mit «' + S.fileName + '»' : 'Geöffnet: «' + S.fileName + '»');
+      if (r.migrated){ await save(); toast('Tresor auf die neue Version umgestellt'); }
+      await saveSession();
+    } catch(x){
+      err(errId, x.name === 'NotFoundError' ? 'Die Datei wurde nicht gefunden (verschoben oder umbenannt?). Bitte «Anderen Tresor öffnen» wählen.' : ykError(x));
+    }
+  });
+}
+$('fUnlock').onsubmit = e => { e.preventDefault(); const pw = $('pwUnlock').value; $('pwUnlock').value=''; doUnlock(v => unlockWithPw(v, pw), 'errUnlock', e.submitter || $('fUnlock').querySelector('[type=submit]'), 'Wird entsperrt …'); };
+$('fUnlockLast').onsubmit = e => { e.preventDefault(); const pw = $('pwLast').value; $('pwLast').value=''; doUnlock(v => unlockWithPw(v, pw), 'errLast', e.submitter || $('fUnlockLast').querySelector('[type=submit]'), 'Wird entsperrt …'); };
+$('btnYkLast').onclick = e => doUnlock(unlockWithYk, 'errLast', e.currentTarget, 'YubiKey jetzt berühren …');
+$('btnYkUnlock').onclick = e => doUnlock(unlockWithYk, 'errUnlock', e.currentTarget, 'YubiKey jetzt berühren …');
+
+function enterMain(){ show('scrMain'); $('search').value=''; $('saveBar').classList.add('hidden'); updateYkBanner(); render(); }
+function updateYkBanner(){ $('ykBanner').classList.toggle('hidden', !(YK && S.vault && !ykKeys(S.vault).length)); }
+
+/* ---------- Sperren ---------- */
+async function lock(reason){
+  if (S.dirty && !S.handle && !confirm('Es gibt nicht gespeicherte Änderungen. Trotzdem sperren? Die Änderungen gehen dann verloren.')) return;
+  await kvDel('session');
+  ['dlg','dlgSet'].forEach(d => { if ($(d).open) $(d).close(); });
+  await initStart();
+  if (reason) toast(reason);
+}
+$('btnLock').onclick = () => lock();
+// Um Mitternacht sperren (Prüfung jede Minute, auch nach Ruhezustand)
+let lockAt = nextMidnight();
+function midnightCheck(){ if (S.dek && Date.now() >= lockAt){ lockAt = nextMidnight(); lock('Automatisch gesperrt (neuer Tag)'); } else if (!S.dek) lockAt = nextMidnight(); }
+setInterval(midnightCheck, 60000); document.addEventListener('visibilitychange', midnightCheck);
+window.addEventListener('beforeunload', e => { if (S.dirty){ e.preventDefault(); e.returnValue=''; } });
+
+/* Sperren, wenn Windows gesperrt wird (Idle Detection) */
+const IDLE_OK = 'IdleDetector' in window;
+let idleOn = false;
+async function startIdle(){
+  if (!IDLE_OK || idleOn) return;
+  try {
+    const st = await navigator.permissions.query({name:'idle-detection'});
+    if (st.state !== 'granted') return;
+    const d = new IdleDetector();
+    d.addEventListener('change', () => { if (d.screenState === 'locked' && S.dek) lock('Gesperrt, weil der PC gesperrt wurde'); });
+    await d.start({threshold:60000}); idleOn = true;
+  } catch {}
+}
+function idleText(){
+  $('btnIdle').classList.toggle('hidden', idleOn || !IDLE_OK);
+  $('idleState').textContent = !IDLE_OK ? 'Dieser Browser unterstützt das leider nicht.' : idleOn
+    ? '✓ Eingeschaltet. Wenn Sie den PC sperren (Windows-Taste + L), sperrt sich auch der Tresor. Das funktioniert, solange der Tresor geöffnet ist (Fenster darf minimiert sein).'
+    : 'Ausgeschaltet. Nach dem Klick fragt der Browser einmal um Erlaubnis. Bitte «Zulassen» wählen.';
+}
+$('btnIdle').onclick = async () => {
+  try { const r = await IdleDetector.requestPermission(); if (r !== 'granted') toast('Nicht erlaubt'); } catch(e){ toast(e.message); }
+  await startIdle(); idleText();
+};
+startIdle();
+
+/* ---------- Liste ---------- */
+function render(){
+  const q = $('search').value.trim().toLowerCase();
+  const items = S.entries
+    .filter(x => !q || [x.name,x.user,x.url,x.note].some(v => (v||'').toLowerCase().includes(q)))
+    .sort((a,b) => a.name.localeCompare(b.name, 'de-CH', {sensitivity:'base'}));
+  const L = $('list');
+  if (!S.entries.length){ L.innerHTML = '<div class="card empty">Noch keine Passwörter gespeichert.<br>Klicken Sie auf <strong>«+ Neues Passwort»</strong>.</div>'; return; }
+  if (!items.length){ L.innerHTML = '<div class="card empty">Nichts gefunden.</div>'; return; }
+  L.innerHTML = items.map(x => `
+    <div class="card entry" data-id="${esc(x.id)}">
+      <div class="name">${esc(x.name)}</div>
+      ${x.user ? `<div class="meta">👤 ${esc(x.user)}</div>` : ''}
+      ${x.url ? `<div class="meta">🌐 ${esc(x.url)}</div>` : ''}
+      <div class="pw" data-pw>••••••••</div>
+      ${x.note ? `<div class="note muted">${esc(x.note)}</div>` : ''}
+      <div class="row">
+        ${x.user ? '<button class="small" data-act="cu">📋 Benutzer kopieren</button>' : ''}
+        <button class="small primary" data-act="cp">📋 Passwort kopieren</button>
+        <button class="small" data-act="show">👁 Anzeigen</button>
+        <button class="small" data-act="edit">✏️ Bearbeiten</button>
+      </div>
+    </div>`).join('');
+}
+$('search').oninput = render;
+
+let clipT;
+async function copy(text, what){
+  try { await navigator.clipboard.writeText(text); }
+  catch { const t=document.createElement('textarea'); t.value=text; document.body.appendChild(t); t.select(); document.execCommand('copy'); t.remove(); }
+  if (what === 'Passwort'){ toast('Passwort kopiert (wird nach 30 Sek. gelöscht)'); clearTimeout(clipT); clipT = setTimeout(() => navigator.clipboard.writeText('').catch(()=>{}), 30000); }
+  else toast(what + ' kopiert');
+}
+$('list').onclick = e => {
+  const b = e.target.closest('button[data-act]'); if (!b) return;
+  const card = b.closest('.entry'); const x = S.entries.find(v => v.id === card.dataset.id); if (!x) return;
+  const act = b.dataset.act;
+  if (act === 'cp') copy(x.pw || '', 'Passwort');
+  else if (act === 'cu') copy(x.user || '', 'Benutzername');
+  else if (act === 'show'){ const p = card.querySelector('[data-pw]'); const on = b.dataset.on !== '1';
+    p.textContent = on ? (x.pw || '(leer)') : '••••••••'; b.dataset.on = on ? '1' : ''; b.textContent = on ? '🙈 Verbergen' : '👁 Anzeigen'; }
+  else if (act === 'edit') openDlg(x);
+};
+
+/* ---------- Eintrag bearbeiten ---------- */
+function openDlg(x){
+  S.editId = x ? x.id : null;
+  $('dlgTitle').textContent = x ? 'Passwort bearbeiten' : 'Neues Passwort';
+  $('eName').value = x?.name || ''; $('eUser').value = x?.user || ''; $('ePw').value = x?.pw || '';
+  $('eUrl').value = x?.url || ''; $('eNote').value = x?.note || '';
+  $('ePw').type = 'password';
+  $('btnDelete').classList.toggle('hidden', !x);
+  $('dlg').showModal(); $('eName').focus();
+}
+$('btnAdd').onclick = () => openDlg(null);
+$('btnCancel').onclick = () => $('dlg').close();
+$('fEntry').onsubmit = async e => {
+  e.preventDefault();
+  const name = $('eName').value.trim(); if (!name){ $('eName').focus(); return; }
+  const data = { name, user:$('eUser').value.trim(), pw:$('ePw').value, url:$('eUrl').value.trim(), note:$('eNote').value.trim(), changed:new Date().toISOString() };
+  if (S.editId){ Object.assign(S.entries.find(v => v.id === S.editId), data); }
+  else S.entries.push({ id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random(), ...data });
+  $('dlg').close(); render(); await save(); toast('Gespeichert');
+};
+$('btnDelete').onclick = async () => {
+  const x = S.entries.find(v => v.id === S.editId); if (!x) return;
+  if (!confirm('«' + x.name + '» wirklich löschen?')) return;
+  S.entries = S.entries.filter(v => v.id !== S.editId);
+  $('dlg').close(); render(); await save(); toast('Gelöscht');
+};
+$('btnGen').onclick = () => {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!?#%+-_=';
+  let p;
+  do { p = Array.from(crypto.getRandomValues(new Uint32Array(18)), n => chars[n % chars.length]).join(''); }
+  while (!/\d/.test(p) || !/[!?#%+\-_=]/.test(p) || !/[A-Z]/.test(p) || !/[a-z]/.test(p));
+  $('ePw').value = p; $('ePw').type = 'text';
+};
+
+/* ---------- Einstellungen ---------- */
+let pendingAction = null;
+function renderKeys(){
+  const keys = S.vault.keys;
+  $('keyList').innerHTML = keys.map((k, i) => {
+    if (k.type === 'pw') return `<div class="keyitem"><div class="k">🔤 <strong>Hauptpasswort</strong> <span class="muted">(Notfall-Schlüssel)</span></div></div>`;
+    const usable = k.rpId === location.hostname;
+    return `<div class="keyitem"><div class="k">🔑 <strong>${esc(k.label)}</strong><br><span class="muted" style="font-size:.88rem">eingerichtet am ${new Date(k.added).toLocaleDateString('de-CH')}${usable ? '' : ' · nur in der installierten App nutzbar'}</span></div>
+      <button class="small danger" data-del="${i}">Entfernen</button></div>`;
+  }).join('');
+}
+$('keyList').onclick = async e => {
+  const b = e.target.closest('[data-del]'); if (!b) return;
+  const k = S.vault.keys[+b.dataset.del];
+  if (!confirm('«' + k.label + '» entfernen? Dieser YubiKey kann den Tresor danach nicht mehr öffnen.')) return;
+  S.vault.keys.splice(+b.dataset.del, 1); renderKeys(); updateYkBanner(); await save(); toast('YubiKey entfernt');
+};
+function openSettings(){
+  renderKeys(); idleText(); $('ver').textContent = VERSION;
+  ['msgAddYk','msgChPw','errReauth'].forEach(id => msg(id,'')); $('reauthBox').classList.add('hidden');
+  $('fAddYk').reset(); $('fChPw').reset();
+  $('dlgSet').showModal();
+}
+$('btnSettings').onclick = openSettings;
+$('btnYkBanner').onclick = openSettings;
+$('btnSetClose').onclick = () => $('dlgSet').close();
+
+/* Für heikle Änderungen braucht es den Datenschlüssel im Klartext: nach Tages-Entsperrung nochmals bestätigen */
+function needRaw(action){
+  if (S.dekRaw) return action();
+  pendingAction = action; $('reauthBox').classList.remove('hidden'); err('errReauth'); $('pwReauth').value=''; $('pwReauth').focus();
+}
+async function reauthDone(raw){
+  await decryptEntries(await importDek(raw), parseVault(S.fileText)); // Prüfen, ob der Schlüssel passt
+  S.dekRaw = raw; $('reauthBox').classList.add('hidden');
+  const a = pendingAction; pendingAction = null; if (a) await a();
+}
+$('fReauth').onsubmit = async e => {
+  e.preventDefault(); err('errReauth');
+  const k = S.vault.keys.find(x => x.type === 'pw');
+  try { const raw = await unwrap(await pwKek($('pwReauth').value, unb64(k.salt), k.iterations), k); $('pwReauth').value=''; await reauthDone(raw); }
+  catch { err('errReauth', 'Das Hauptpasswort ist falsch.'); }
+};
+$('btnReauthYk').onclick = async () => {
+  err('errReauth');
+  try { const { k, out } = await ykGet(ykKeys(S.vault)); await reauthDone(await unwrap(await prfKek(out), k)); }
+  catch(x){ err('errReauth', ykError(x)); }
+};
+
+$('fAddYk').onsubmit = e => {
+  e.preventDefault(); msg('msgAddYk','');
+  const label = $('ykLabel').value.trim(); if (!label) return;
+  const btn = e.submitter || $('fAddYk').querySelector('[type=submit]');
+  needRaw(() => busy(btn, 'YubiKey jetzt berühren …', async () => {
+    try { await addYubiKey(label); await save(); renderKeys(); updateYkBanner(); $('fAddYk').reset(); msg('msgAddYk', '✓ «' + label + '» ist eingerichtet. Ab jetzt können Sie mit diesem YubiKey entsperren.', 'ok'); }
+    catch(x){ msg('msgAddYk', ykError(x)); }
+  }));
+};
+$('fChPw').onsubmit = e => {
+  e.preventDefault(); msg('msgChPw','');
+  const p1 = $('pwCh1').value, p2 = $('pwCh2').value;
+  if (p1.length < 10) return msg('msgChPw','Mindestens 10 Zeichen.');
+  if (p1 !== p2) return msg('msgChPw','Die beiden Passwörter stimmen nicht überein.');
+  needRaw(async () => {
+    const i = S.vault.keys.findIndex(x => x.type === 'pw');
+    S.vault.keys[i] = await pwKeyEntry(p1, S.dekRaw);
+    await save(); $('fChPw').reset(); msg('msgChPw','✓ Hauptpasswort geändert. Bitte den Zettel zu Hause ersetzen.','ok');
+  });
+};
+
+/* ---------- Anzeigen-Knöpfe (Auge) ---------- */
+document.addEventListener('click', e => { const b = e.target.closest('.eye'); if (!b) return; const i = $(b.dataset.for); i.type = i.type === 'password' ? 'text' : 'password'; });
+
+/* ---------- Manuell speichern / Drucken ---------- */
+$('btnSaveManual').onclick = saveManual;
+$('btnPrint').onclick = () => {
+  if (!confirm('Die Notfall-Liste zeigt alle Passwörter lesbar an.\n\nNur ausdrucken (nicht als PDF speichern!) und den Ausdruck zu Hause sicher aufbewahren. Fortfahren?')) return;
+  const rows = [...S.entries].sort((a,b)=>a.name.localeCompare(b.name,'de-CH')).map(x => `<tr><td>${esc(x.name)}</td><td>${esc(x.user)}</td><td style="font-family:monospace">${esc(x.pw)}</td><td>${esc(x.url)}</td><td>${esc(x.note)}</td></tr>`).join('');
+  const w = window.open('', '_blank');
+  if (!w) return alert('Bitte Pop-ups für diese Seite erlauben.');
+  w.document.write(`<!doctype html><meta charset="utf-8"><title>Notfall-Liste</title><style>body{font:12px system-ui,sans-serif;margin:20px}table{border-collapse:collapse;width:100%}td,th{border:1px solid #999;padding:5px;text-align:left;vertical-align:top;word-break:break-word}</style><h2>Passwort-Notfall-Liste, Stand ${new Date().toLocaleString('de-CH')}</h2><table><tr><th>Wofür</th><th>Benutzer</th><th>Passwort</th><th>Webseite</th><th>Notiz</th></tr>${rows}</table>`);
+  w.document.close(); w.focus(); w.print();
+};
+
+/* ---------- Offline-Betrieb (installierte App) ---------- */
+if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').catch(()=>{});
+
+initStart();
+</script>
+</body>
+</html>
