@@ -32,8 +32,26 @@ p{margin:0 0 12px}
 .muted{color:var(--muted)}
 .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;box-shadow:var(--shadow);margin-bottom:14px}
 label{display:block;font-weight:600;margin:10px 0 4px}
-input,textarea{width:100%;font:inherit;color:var(--text);background:var(--field);border:1px solid var(--line);border-radius:8px;padding:10px 12px;min-height:44px}
+input,textarea,select{width:100%;font:inherit;color:var(--text);background:var(--field);border:1px solid var(--line);border-radius:8px;padding:10px 12px;min-height:44px}
 textarea{min-height:80px;resize:vertical}
+select{appearance:auto;cursor:pointer}
+.check{display:flex;gap:10px;align-items:center;font-weight:600;margin:12px 0 4px;min-height:44px;cursor:pointer}
+.check input{width:24px;height:24px;min-height:24px;margin:0;flex:0 0 24px}
+.namerow{display:flex;gap:8px;align-items:flex-start;justify-content:space-between}
+.namerow .name{min-width:0;padding-top:6px}
+.favbtn{border:0;background:transparent;font-size:1.3rem;line-height:1;padding:6px;min-height:40px;min-width:40px;color:var(--muted);flex:0 0 auto}
+.favbtn.on{color:#e0a800}
+details.grp{margin-bottom:12px}
+details.grp>summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 12px;min-height:44px;border-radius:10px;background:color-mix(in srgb,var(--accent) 10%,var(--card));border:1px solid var(--line);font-weight:700}
+details.grp>summary::-webkit-details-marker{display:none}
+details.grp>summary::before{content:"▸";color:var(--muted);transition:transform .15s;flex:0 0 auto}
+details.grp[open]>summary::before{transform:rotate(90deg)}
+details.grp>summary .gt{flex:1;min-width:0;overflow-wrap:anywhere}
+details.grp>summary .cnt{font-weight:500;color:var(--muted);font-size:.9rem;flex:0 0 auto}
+details.grp .gbody{padding:12px 0 0 10px;border-left:2px solid var(--line);margin-left:8px}
+details.grp.sub>summary{background:var(--card);font-weight:600}
+.gempty{font-size:.92rem;margin:0 0 8px}
+.gsub{padding-left:18px}
 input:focus,textarea:focus,button:focus-visible{outline:3px solid color-mix(in srgb,var(--accent) 45%,transparent);outline-offset:1px}
 button{font:inherit;cursor:pointer;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--text);padding:9px 14px;min-height:44px;min-width:44px}
 button:disabled{opacity:.6;cursor:wait}
@@ -181,6 +199,7 @@ footer{font-size:.85rem;color:var(--muted);text-align:center;margin:20px 0}
   </div>
   <div class="row" style="margin-bottom:14px">
     <input id="search" type="search" placeholder="Suchen, z. B. «Bank»" aria-label="Suchen" style="flex:1 1 180px;min-width:0">
+    <select id="gFilter" aria-label="Gruppe anzeigen" style="flex:1 1 160px;min-width:0" class="hidden"></select>
     <button id="btnAdd" class="primary">+ Neues Passwort</button>
   </div>
   <div id="list"></div>
@@ -195,6 +214,15 @@ footer{font-size:.85rem;color:var(--muted);text-align:center;margin:20px 0}
     <h2 id="dlgTitle">Neues Passwort</h2>
     <label for="eName">Wofür? (z. B. «PostFinance», «Swisscom»)</label>
     <input id="eName" required autocomplete="off">
+    <label for="eGroup">Gruppe</label>
+    <select id="eGroup"></select>
+    <div id="newGroupBox" class="msg info hidden">
+      <label for="eNewGroup" style="margin-top:0">Name der neuen Gruppe</label>
+      <input id="eNewGroup" autocomplete="off" maxlength="40" placeholder="z. B. «Bank»">
+      <label for="eNewParent">Unter welcher Gruppe? (optional)</label>
+      <select id="eNewParent"></select>
+    </div>
+    <label class="check"><input id="eFav" type="checkbox"> ⭐ Favorit (immer zuoberst)</label>
     <label for="eUser">Benutzername / E-Mail</label>
     <input id="eUser" autocomplete="off">
     <label for="ePw">Passwort</label>
@@ -214,6 +242,20 @@ footer{font-size:.85rem;color:var(--muted);text-align:center;margin:20px 0}
 <!-- ===== Einstellungen ===== -->
 <dialog id="dlgSet">
   <h2>⚙️ Einstellungen</h2>
+
+  <h3>Gruppen verwalten</h3>
+  <div id="gList"></div>
+  <form id="fAddGroup" class="msg info" style="margin-top:10px">
+    <div style="font-weight:600">Neue Gruppe anlegen</div>
+    <div class="row" style="margin-top:6px">
+      <input id="gIcon" maxlength="4" placeholder="🙂" aria-label="Symbol (optional)" title="Symbol (optional), z. B. 🏦" style="flex:0 0 64px;text-align:center">
+      <input id="gName" maxlength="40" required placeholder="Name, z. B. «Bank»" aria-label="Name der Gruppe" autocomplete="off" style="flex:1 1 160px;min-width:0">
+    </div>
+    <label for="gParent">Unter welcher Gruppe? (optional)</label>
+    <select id="gParent"></select>
+    <p class="muted" style="font-size:.88rem;margin:6px 0">Symbol: z. B. 🏦 💳 🛒 💼 🏠 📧 (unter Windows mit Windows-Taste + Punkt).</p>
+    <button class="primary small" type="submit">Gruppe anlegen</button>
+  </form>
 
   <h3>Schlüssel, die den Tresor öffnen</h3>
   <div id="keyList"></div>
@@ -263,7 +305,7 @@ footer{font-size:.85rem;color:var(--muted);text-align:center;margin:20px 0}
 
 <script>
 "use strict";
-const VERSION = '2.0 (14.11.2026)';
+const VERSION = '2.1 (16.11.2026)';
 const $ = id => document.getElementById(id);
 const FS = 'showOpenFilePicker' in window && 'showSaveFilePicker' in window;
 const YK = (location.protocol === 'https:' || location.hostname === 'localhost') && !!window.PublicKeyCredential;
@@ -272,7 +314,7 @@ const FILE_TYPES = [{description:'Passwort-Tresor', accept:{'application/json':[
 
 /* Zustand: dek = Datenschlüssel (CryptoKey), dekRaw = nur vorhanden direkt nach Entsperren mit Passwort/YubiKey */
 let S;
-function resetState(){ S = { handle:null, fileName:'', fileText:'', vault:null, dek:null, dekRaw:null, entries:[], dirty:false, lastMod:0, editId:null }; }
+function resetState(){ S = { handle:null, fileName:'', fileText:'', vault:null, dek:null, dekRaw:null, entries:[], groups:[], dirty:false, lastMod:0, editId:null }; }
 resetState();
 
 /* ---------- Hilfsfunktionen ---------- */
@@ -311,13 +353,13 @@ function parseVault(text){
   if (o.app !== 'Passwort-Tresor') throw new Error('Diese Datei ist keine Tresor-Datei.');
   return o;
 }
-async function decryptEntries(dek, v){
-  try { return JSON.parse(dec.decode(await crypto.subtle.decrypt({name:'AES-GCM', iv:unb64(v.iv)}, dek, unb64(v.data)))).entries || []; }
+async function decryptPayload(dek, v){
+  try { const o = JSON.parse(dec.decode(await crypto.subtle.decrypt({name:'AES-GCM', iv:unb64(v.iv)}, dek, unb64(v.data)))); return { entries: o.entries || [], groups: o.groups || [] }; }
   catch { throw new Error('Die Tresor-Datei passt nicht zum Schlüssel (oder ist beschädigt).'); }
 }
 async function sealVault(){
   const iv = rnd(12);
-  const ct = await crypto.subtle.encrypt({name:'AES-GCM', iv}, S.dek, enc.encode(JSON.stringify({entries:S.entries})));
+  const ct = await crypto.subtle.encrypt({name:'AES-GCM', iv}, S.dek, enc.encode(JSON.stringify({entries:S.entries, groups:S.groups})));
   return JSON.stringify({app:'Passwort-Tresor', version:2, keys:S.vault.keys, iv:b64(iv), data:b64(ct), saved:new Date().toISOString()}, null, 1);
 }
 
@@ -329,13 +371,13 @@ async function unlockWithPw(v, pw){
     const entries = JSON.parse(dec.decode(plain)).entries || [];
     const raw = rnd(32);                       // Umstellung auf Version 2
     S.vault = { keys:[await pwKeyEntry(pw, raw)] };
-    return { raw, entries, migrated:true };
+    return { raw, entries, groups:[], migrated:true };
   }
   const k = v.keys.find(x => x.type === 'pw');
   if (!k) throw new Error('Für diesen Tresor ist kein Hauptpasswort hinterlegt.');
   let raw; try { raw = await unwrap(await pwKek(pw, unb64(k.salt), k.iterations), k); } catch { throw new Error('Das Hauptpasswort ist falsch.'); }
   S.vault = v;
-  return { raw, entries: await decryptEntries(await importDek(raw), v) };
+  return { raw, ...(await decryptPayload(await importDek(raw), v)) };
 }
 
 /* ---------- YubiKey (WebAuthn mit PRF) ---------- */
@@ -364,7 +406,7 @@ async function unlockWithYk(v){
   const { k, out } = await ykGet(keys);
   let raw; try { raw = await unwrap(await prfKek(out), k); } catch { throw new Error('Der YubiKey passt nicht zu diesem Tresor.'); }
   S.vault = v;
-  return { raw, entries: await decryptEntries(await importDek(raw), v) };
+  return { raw, ...(await decryptPayload(await importDek(raw), v)) };
 }
 async function addYubiKey(label){
   const prfSalt = rnd(32);
@@ -427,7 +469,7 @@ async function save(){
 }
 async function reloadFromFile(){
   const f = await S.handle.getFile(); S.fileText = await f.text(); S.lastMod = f.lastModified;
-  const v = parseVault(S.fileText); S.vault = v; S.entries = await decryptEntries(S.dek, v); render();
+  const v = parseVault(S.fileText); S.vault = v; Object.assign(S, await decryptPayload(S.dek, v)); normalizeGroups(); render();
   setStatus('ok', 'Neu geladen um ' + timeNow());
 }
 async function saveManual(){
@@ -470,7 +512,7 @@ async function openSession(sess){
     if (!(await ensurePermission(S.handle))) throw new Error('Bitte «Datei bearbeiten» erlauben, sonst kann der Tresor nicht speichern.');
     const f = await S.handle.getFile(); S.fileText = await f.text(); S.lastMod = f.lastModified;
     const v = parseVault(S.fileText);
-    S.entries = await decryptEntries(sess.dek, v); S.vault = v; S.dek = sess.dek; S.dekRaw = null;
+    Object.assign(S, await decryptPayload(sess.dek, v)); normalizeGroups(); S.vault = v; S.dek = sess.dek; S.dekRaw = null;
     enterMain(); setStatus('ok', '✓ Verbunden mit «' + S.fileName + '»');
   } catch(x){
     if (x.name === 'NotFoundError'){ await kvDel('session'); }
@@ -503,7 +545,7 @@ $('fNew').onsubmit = async e => {
   await busy(btn, 'Wird angelegt …', async () => {
     const raw = rnd(32);
     S.vault = { keys:[await pwKeyEntry(p1, raw)] };
-    S.dekRaw = raw; S.dek = await importDek(raw); S.entries = [];
+    S.dekRaw = raw; S.dek = await importDek(raw); S.entries = []; S.groups = [];
     enterMain(); await save(); await saveSession();
   });
 };
@@ -534,7 +576,7 @@ async function doUnlock(method, errId, btn, busyText){
         const f = await S.handle.getFile(); S.fileText = await f.text(); S.lastMod = f.lastModified;
       }
       const r = await method(parseVault(S.fileText));
-      S.dekRaw = r.raw; S.dek = await importDek(r.raw); S.entries = r.entries;
+      S.dekRaw = r.raw; S.dek = await importDek(r.raw); S.entries = r.entries; S.groups = r.groups || []; normalizeGroups();
       enterMain(); setStatus('ok', S.handle ? '✓ Verbunden mit «' + S.fileName + '»' : 'Geöffnet: «' + S.fileName + '»');
       if (r.migrated){ await save(); toast('Tresor auf die neue Version umgestellt'); }
       await saveSession();
@@ -591,18 +633,46 @@ $('btnIdle').onclick = async () => {
 };
 startIdle();
 
+/* ---------- Gruppen ----------
+   Eine Gruppe ist ein Pfad: ["Firma"] oder ["Firma","Kunden"] (höchstens 2 Ebenen).
+   S.groups = eigene Liste (Reihenfolge, Symbol). Jeder Eintrag hat x.group = Pfad oder nichts. */
+const gk = p => (p || []).join('\u0001');
+const gLabel = p => (p || []).join(' › ');
+const sameG = (a, b) => gk(a) === gk(b);
+const inG = (x, p) => x.group && gk(x.group.slice(0, p.length)) === gk(p);
+const findG = p => S.groups.find(g => sameG(g.path, p));
+function normalizeGroups(){
+  // Gruppen, die nur in Einträgen vorkommen (z. B. von der Reserve-Version), wieder in die Liste aufnehmen
+  S.groups = (S.groups || []).filter(g => Array.isArray(g.path) && g.path.length);
+  const add = p => { if (!findG(p)) S.groups.push({ path: p.slice(0, 2), icon: '' }); };
+  S.entries.forEach(x => { if (Array.isArray(x.group) && x.group.length){ x.group = x.group.slice(0, 2); add([x.group[0]]); if (x.group.length > 1) add(x.group); } else delete x.group; });
+  S.groups.filter(g => g.path.length > 1).forEach(g => add([g.path[0]]));
+}
+function tops(){ return S.groups.filter(g => g.path.length === 1); }
+function kids(top){ return S.groups.filter(g => g.path.length === 2 && g.path[0] === top.path[0]); }
+function tree(){ const out = []; tops().forEach(t => { out.push(t); out.push(...kids(t)); }); return out; }
+function gIcon(p){ const g = findG(p); return g && g.icon ? g.icon + ' ' : ''; }
+function gName(g){ return (g.icon ? g.icon + ' ' : '') + g.path[g.path.length - 1]; }
+function groupOptions(sel, {withNone=true, onlyTop=false, noneText='— Ohne Gruppe —'} = {}){
+  const list = onlyTop ? tops() : tree();
+  return (withNone ? `<option value="">${noneText}</option>` : '') +
+    list.map(g => `<option value="${esc(gk(g.path))}"${sel && sameG(sel, g.path) ? ' selected' : ''}>${g.path.length > 1 ? '   ↳ ' : ''}${esc(gName(g))}</option>`).join('');
+}
+const keyToPath = k => k ? k.split('\u0001') : null;
+
+/* Auf-/Zugeklappte Gruppen merken (nur auf diesem Gerät) */
+let collapsed = new Set();
+try { collapsed = new Set(JSON.parse(localStorage.getItem('tresor-zu') || '[]')); } catch {}
+function saveCollapsed(){ try { localStorage.setItem('tresor-zu', JSON.stringify([...collapsed])); } catch {} }
+
 /* ---------- Liste ---------- */
-function render(){
-  const q = $('search').value.trim().toLowerCase();
-  const items = S.entries
-    .filter(x => !q || [x.name,x.user,x.url,x.note].some(v => (v||'').toLowerCase().includes(q)))
-    .sort((a,b) => a.name.localeCompare(b.name, 'de-CH', {sensitivity:'base'}));
-  const L = $('list');
-  if (!S.entries.length){ L.innerHTML = '<div class="card empty">Noch keine Passwörter gespeichert.<br>Klicken Sie auf <strong>«+ Neues Passwort»</strong>.</div>'; return; }
-  if (!items.length){ L.innerHTML = '<div class="card empty">Nichts gefunden.</div>'; return; }
-  L.innerHTML = items.map(x => `
+const byName = (a, b) => a.name.localeCompare(b.name, 'de-CH', {sensitivity:'base'});
+function card(x, showGroup){
+  return `
     <div class="card entry" data-id="${esc(x.id)}">
-      <div class="name">${esc(x.name)}</div>
+      <div class="namerow"><div class="name">${esc(x.name)}</div>
+        <button class="favbtn${x.fav ? ' on' : ''}" data-act="fav" aria-pressed="${x.fav ? 'true' : 'false'}" aria-label="${x.fav ? 'Favorit entfernen' : 'Als Favorit markieren'}" title="${x.fav ? 'Favorit entfernen' : 'Als Favorit markieren'}">${x.fav ? '⭐' : '☆'}</button></div>
+      ${showGroup && x.group ? `<div class="meta">📁 ${esc(gIcon([x.group[0]]) + gLabel(x.group))}</div>` : ''}
       ${x.user ? `<div class="meta">👤 ${esc(x.user)}</div>` : ''}
       ${x.url ? `<div class="meta">🌐 ${esc(x.url)}</div>` : ''}
       <div class="pw" data-pw>••••••••</div>
@@ -613,9 +683,59 @@ function render(){
         <button class="small" data-act="show">👁 Anzeigen</button>
         <button class="small" data-act="edit">✏️ Bearbeiten</button>
       </div>
-    </div>`).join('');
+    </div>`;
+}
+function section(key, title, count, inner, sub){
+  return `<details class="grp${sub ? ' sub' : ''}" data-k="${esc(key)}"${collapsed.has(key) ? '' : ' open'}>
+    <summary><span class="gt">${title}</span><span class="cnt">${count}</span></summary>
+    <div class="gbody">${inner}</div></details>`;
+}
+function groupSection(g){
+  const own = S.entries.filter(x => x.group && sameG(x.group, g.path)).sort(byName);
+  const total = S.entries.filter(x => inG(x, g.path)).length;
+  let inner = own.map(x => card(x)).join('');
+  if (g.path.length === 1) inner += kids(g).map(groupSection).join('');
+  if (!total) inner = '<p class="muted gempty">Noch keine Passwörter in dieser Gruppe.</p>';
+  return section(gk(g.path), esc(gName(g)), total, inner, g.path.length > 1);
+}
+function fillFilter(){
+  const f = $('gFilter'), cur = f.value || 'all';
+  f.innerHTML = '<option value="all">Alle Gruppen</option>' + (S.entries.some(x => x.fav) ? '<option value="fav">⭐ Favoriten</option>' : '') +
+    groupOptions(null, {withNone:false}) + '<option value="none">Ohne Gruppe</option>';
+  f.value = [...f.options].some(o => o.value === cur) ? cur : 'all';
+  f.classList.toggle('hidden', !S.groups.length);
+}
+function render(){
+  fillFilter();
+  const q = $('search').value.trim().toLowerCase();
+  const f = $('gFilter').value;
+  const L = $('list');
+  if (!S.entries.length && !S.groups.length){ L.innerHTML = '<div class="card empty">Noch keine Passwörter gespeichert.<br>Klicken Sie auf <strong>«+ Neues Passwort»</strong>.</div>'; return; }
+  let pool = S.entries;
+  if (f === 'fav') pool = pool.filter(x => x.fav);
+  else if (f === 'none') pool = pool.filter(x => !x.group);
+  else if (f !== 'all') pool = pool.filter(x => inG(x, keyToPath(f)));
+  // Suche: flache Liste über alle (gefilterten) Gruppen, mit Gruppenangabe
+  if (q){
+    const items = pool.filter(x => [x.name, x.user, x.url, x.note, gLabel(x.group)].some(v => (v||'').toLowerCase().includes(q))).sort(byName);
+    L.innerHTML = items.length ? items.map(x => card(x, true)).join('') : '<div class="card empty">Nichts gefunden.</div>';
+    return;
+  }
+  if (f === 'fav' || f === 'none' || !S.groups.length){
+    L.innerHTML = pool.length ? pool.slice().sort(byName).map(x => card(x, f === 'fav')).join('') : '<div class="card empty">Hier ist noch nichts.</div>';
+    return;
+  }
+  if (f !== 'all'){ L.innerHTML = groupSection(findG(keyToPath(f))); return; }
+  const favs = S.entries.filter(x => x.fav).sort(byName);
+  const none = S.entries.filter(x => !x.group).sort(byName);
+  L.innerHTML =
+    (favs.length ? section('__fav', '⭐ Favoriten', favs.length, favs.map(x => card(x, true)).join('')) : '') +
+    tops().map(groupSection).join('') +
+    (none.length ? section('__none', 'Ohne Gruppe', none.length, none.map(x => card(x)).join('')) : '');
 }
 $('search').oninput = render;
+$('gFilter').onchange = render;
+$('list').addEventListener('toggle', e => { const d = e.target; if (!d.matches || !d.matches('details.grp')) return; d.open ? collapsed.delete(d.dataset.k) : collapsed.add(d.dataset.k); saveCollapsed(); }, true);
 
 let clipT;
 async function copy(text, what){
@@ -624,7 +744,7 @@ async function copy(text, what){
   if (what === 'Passwort'){ toast('Passwort kopiert (wird nach 30 Sek. gelöscht)'); clearTimeout(clipT); clipT = setTimeout(() => navigator.clipboard.writeText('').catch(()=>{}), 30000); }
   else toast(what + ' kopiert');
 }
-$('list').onclick = e => {
+$('list').onclick = async e => {
   const b = e.target.closest('button[data-act]'); if (!b) return;
   const card = b.closest('.entry'); const x = S.entries.find(v => v.id === card.dataset.id); if (!x) return;
   const act = b.dataset.act;
@@ -633,26 +753,59 @@ $('list').onclick = e => {
   else if (act === 'show'){ const p = card.querySelector('[data-pw]'); const on = b.dataset.on !== '1';
     p.textContent = on ? (x.pw || '(leer)') : '••••••••'; b.dataset.on = on ? '1' : ''; b.textContent = on ? '🙈 Verbergen' : '👁 Anzeigen'; }
   else if (act === 'edit') openDlg(x);
+  else if (act === 'fav'){ x.fav = !x.fav; if (!x.fav) delete x.fav; render(); await save(); toast(x.fav ? 'Als Favorit markiert' : 'Favorit entfernt'); }
 };
 
 /* ---------- Eintrag bearbeiten ---------- */
+function fillEntryGroups(sel){
+  $('eGroup').innerHTML = groupOptions(sel) + '<option value="__new">+ Neue Gruppe …</option>';
+  $('newGroupBox').classList.add('hidden');
+}
+$('eGroup').onchange = () => {
+  const isNew = $('eGroup').value === '__new';
+  $('newGroupBox').classList.toggle('hidden', !isNew);
+  if (isNew){ $('eNewParent').innerHTML = groupOptions(null, {onlyTop:true, noneText:'— keine (Hauptgruppe) —'}); $('eNewGroup').value = ''; $('eNewGroup').focus(); }
+};
 function openDlg(x){
   S.editId = x ? x.id : null;
   $('dlgTitle').textContent = x ? 'Passwort bearbeiten' : 'Neues Passwort';
   $('eName').value = x?.name || ''; $('eUser').value = x?.user || ''; $('ePw').value = x?.pw || '';
-  $('eUrl').value = x?.url || ''; $('eNote').value = x?.note || '';
+  $('eUrl').value = x?.url || ''; $('eNote').value = x?.note || ''; $('eFav').checked = !!x?.fav;
+  const f = $('gFilter').value;
+  fillEntryGroups(x ? x.group : (f && !['all','fav','none'].includes(f) ? keyToPath(f) : null));
   $('ePw').type = 'password';
   $('btnDelete').classList.toggle('hidden', !x);
   $('dlg').showModal(); $('eName').focus();
+}
+/* Neue Gruppe anlegen; gibt Pfad zurück oder wirft Fehlermeldung */
+function createGroup(name, parentPath, icon=''){
+  name = name.replace(/\s+/g, ' ').trim();
+  if (!name) throw new Error('Bitte einen Namen für die Gruppe eingeben.');
+  if (name.length > 40) throw new Error('Der Name ist zu lang (höchstens 40 Zeichen).');
+  const path = parentPath ? [parentPath[0], name] : [name];
+  const dup = S.groups.find(g => g.path.length === path.length && gk(g.path.slice(0, -1)) === gk(path.slice(0, -1)) && g.path[g.path.length-1].toLowerCase() === name.toLowerCase());
+  if (dup) return dup.path; // gibt es schon: einfach diese verwenden
+  if (parentPath){ const parent = findG(parentPath); const i = S.groups.indexOf(parent); const lastKid = kids(parent).pop(); S.groups.splice((lastKid ? S.groups.indexOf(lastKid) : i) + 1, 0, {path, icon}); }
+  else S.groups.push({path, icon});
+  return path;
 }
 $('btnAdd').onclick = () => openDlg(null);
 $('btnCancel').onclick = () => $('dlg').close();
 $('fEntry').onsubmit = async e => {
   e.preventDefault();
   const name = $('eName').value.trim(); if (!name){ $('eName').focus(); return; }
+  let group = null;
+  const gv = $('eGroup').value;
+  if (gv === '__new'){
+    try { group = createGroup($('eNewGroup').value, keyToPath($('eNewParent').value)); }
+    catch(x){ toast(x.message); $('eNewGroup').focus(); return; }
+  } else group = keyToPath(gv);
   const data = { name, user:$('eUser').value.trim(), pw:$('ePw').value, url:$('eUrl').value.trim(), note:$('eNote').value.trim(), changed:new Date().toISOString() };
-  if (S.editId){ Object.assign(S.entries.find(v => v.id === S.editId), data); }
-  else S.entries.push({ id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random(), ...data });
+  let x;
+  if (S.editId){ x = S.entries.find(v => v.id === S.editId); Object.assign(x, data); }
+  else { x = { id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random(), ...data }; S.entries.push(x); }
+  if (group) x.group = group; else delete x.group;
+  if ($('eFav').checked) x.fav = true; else delete x.fav;
   $('dlg').close(); render(); await save(); toast('Gespeichert');
 };
 $('btnDelete').onclick = async () => {
@@ -660,6 +813,72 @@ $('btnDelete').onclick = async () => {
   if (!confirm('«' + x.name + '» wirklich löschen?')) return;
   S.entries = S.entries.filter(v => v.id !== S.editId);
   $('dlg').close(); render(); await save(); toast('Gelöscht');
+};
+
+/* ---------- Gruppen verwalten (Einstellungen) ---------- */
+let gEdit = null;
+function renderGroupAdmin(){
+  $('gParent').innerHTML = groupOptions(null, {onlyTop:true, noneText:'— keine (Hauptgruppe) —'});
+  const t = tree();
+  if (!t.length){ $('gList').innerHTML = '<p class="muted" style="font-size:.92rem">Noch keine Gruppen.</p>'; return; }
+  $('gList').innerHTML = t.map(g => {
+    const k = gk(g.path), sib = g.path.length === 1 ? tops() : kids(findG([g.path[0]])), i = sib.indexOf(g);
+    const n = S.entries.filter(x => inG(x, g.path)).length;
+    if (gEdit === k) return `<div class="keyitem${g.path.length > 1 ? ' gsub' : ''}"><form class="gedit row" data-k="${esc(k)}" style="flex:1 1 100%">
+        <input name="icon" value="${esc(g.icon)}" maxlength="4" aria-label="Symbol" placeholder="🙂" style="flex:0 0 64px;text-align:center">
+        <input name="name" value="${esc(g.path[g.path.length-1])}" aria-label="Name der Gruppe" required maxlength="40" style="flex:1 1 140px;min-width:0">
+        <button class="small primary" type="submit">Speichern</button><button class="small" type="button" data-g="cancel">Abbrechen</button></form></div>`;
+    return `<div class="keyitem${g.path.length > 1 ? ' gsub' : ''}"><div class="k">${g.path.length > 1 ? '↳ ' : ''}<strong>${esc(gName(g))}</strong> <span class="muted" style="font-size:.88rem">(${n})</span></div>
+      <div class="row">
+        <button class="small" data-g="up" data-k="${esc(k)}" ${i === 0 ? 'disabled' : ''} aria-label="Nach oben" title="Nach oben">↑</button>
+        <button class="small" data-g="down" data-k="${esc(k)}" ${i === sib.length - 1 ? 'disabled' : ''} aria-label="Nach unten" title="Nach unten">↓</button>
+        <button class="small" data-g="edit" data-k="${esc(k)}" aria-label="Umbenennen" title="Umbenennen">✏️</button>
+        <button class="small danger" data-g="del" data-k="${esc(k)}" aria-label="Löschen" title="Löschen">🗑</button>
+      </div></div>`;
+  }).join('');
+}
+async function groupsChanged(){ normalizeGroups(); renderGroupAdmin(); render(); await save(); }
+$('gList').onclick = async e => {
+  const b = e.target.closest('button[data-g]'); if (!b) return;
+  const act = b.dataset.g;
+  if (act === 'cancel'){ gEdit = null; renderGroupAdmin(); return; }
+  const g = findG(keyToPath(b.dataset.k)); if (!g) return;
+  if (act === 'edit'){ gEdit = b.dataset.k; renderGroupAdmin(); const f = $('gList').querySelector('form.gedit [name=name]'); f && f.focus(); return; }
+  if (act === 'up' || act === 'down'){
+    const sib = g.path.length === 1 ? tops() : kids(findG([g.path[0]]));
+    const other = sib[sib.indexOf(g) + (act === 'up' ? -1 : 1)]; if (!other) return;
+    if (g.path.length === 1){ // ganze Blöcke (Gruppe + Untergruppen) tauschen
+      const order = tops(); const a = order.indexOf(g), c = order.indexOf(other); [order[a], order[c]] = [order[c], order[a]];
+      S.groups = order.flatMap(t => [t, ...kids(t)]);
+    } else { const a = S.groups.indexOf(g), c = S.groups.indexOf(other); [S.groups[a], S.groups[c]] = [S.groups[c], S.groups[a]]; }
+    await groupsChanged(); return;
+  }
+  if (act === 'del'){
+    const n = S.entries.filter(x => inG(x, g.path)).length, sub = g.path.length === 1 ? kids(g).length : 0;
+    if (!confirm(`Gruppe «${gLabel(g.path)}» löschen?` + (sub ? `\nAuch die ${sub} Untergruppe(n) werden gelöscht.` : '') + (n ? `\n\nDie ${n} Passwörter darin bleiben erhalten und landen unter «Ohne Gruppe».` : ''))) return;
+    S.entries.forEach(x => { if (inG(x, g.path)) delete x.group; });
+    S.groups = S.groups.filter(o => gk(o.path.slice(0, g.path.length)) !== gk(g.path));
+    await groupsChanged(); toast('Gruppe gelöscht');
+  }
+};
+$('gList').onsubmit = async e => {
+  e.preventDefault();
+  const f = e.target; const g = findG(keyToPath(f.dataset.k)); if (!g) return;
+  const name = f.elements.name.value.replace(/\s+/g, ' ').trim(); if (!name) return;
+  const icon = f.elements.icon.value.trim();
+  const old = g.path, neu = [...old.slice(0, -1), name];
+  if (!sameG(old, neu) && findG(neu)) return toast('Diese Gruppe gibt es schon.');
+  const swap = p => [...neu, ...p.slice(old.length)];
+  S.groups.forEach(o => { if (gk(o.path.slice(0, old.length)) === gk(old)) o.path = swap(o.path); });
+  S.entries.forEach(x => { if (inG(x, old)) x.group = swap(x.group); });
+  g.icon = icon; gEdit = null;
+  await groupsChanged(); toast('Gruppe gespeichert');
+};
+$('fAddGroup').onsubmit = async e => {
+  e.preventDefault();
+  try { createGroup($('gName').value, keyToPath($('gParent').value), $('gIcon').value.trim()); }
+  catch(x){ return toast(x.message); }
+  $('fAddGroup').reset(); await groupsChanged(); toast('Gruppe angelegt');
 };
 $('btnGen').onclick = () => {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!?#%+-_=';
@@ -687,7 +906,7 @@ $('keyList').onclick = async e => {
   S.vault.keys.splice(+b.dataset.del, 1); renderKeys(); updateYkBanner(); await save(); toast('YubiKey entfernt');
 };
 function openSettings(){
-  renderKeys(); idleText(); $('ver').textContent = VERSION;
+  gEdit = null; renderGroupAdmin(); renderKeys(); idleText(); $('ver').textContent = VERSION;
   ['msgAddYk','msgChPw','errReauth'].forEach(id => msg(id,'')); $('reauthBox').classList.add('hidden');
   $('fAddYk').reset(); $('fChPw').reset();
   $('dlgSet').showModal();
@@ -702,7 +921,7 @@ function needRaw(action){
   pendingAction = action; $('reauthBox').classList.remove('hidden'); err('errReauth'); $('pwReauth').value=''; $('pwReauth').focus();
 }
 async function reauthDone(raw){
-  await decryptEntries(await importDek(raw), parseVault(S.fileText)); // Prüfen, ob der Schlüssel passt
+  await decryptPayload(await importDek(raw), parseVault(S.fileText)); // Prüfen, ob der Schlüssel passt
   S.dekRaw = raw; $('reauthBox').classList.add('hidden');
   const a = pendingAction; pendingAction = null; if (a) await a();
 }
@@ -746,7 +965,12 @@ document.addEventListener('click', e => { const b = e.target.closest('.eye'); if
 $('btnSaveManual').onclick = saveManual;
 $('btnPrint').onclick = () => {
   if (!confirm('Die Notfall-Liste zeigt alle Passwörter lesbar an.\n\nNur ausdrucken (nicht als PDF speichern!) und den Ausdruck zu Hause sicher aufbewahren. Fortfahren?')) return;
-  const rows = [...S.entries].sort((a,b)=>a.name.localeCompare(b.name,'de-CH')).map(x => `<tr><td>${esc(x.name)}</td><td>${esc(x.user)}</td><td style="font-family:monospace">${esc(x.pw)}</td><td>${esc(x.url)}</td><td>${esc(x.note)}</td></tr>`).join('');
+  const row = x => `<tr><td>${x.fav ? '⭐ ' : ''}${esc(x.name)}</td><td>${esc(x.user)}</td><td style="font-family:monospace">${esc(x.pw)}</td><td>${esc(x.url)}</td><td>${esc(x.note)}</td></tr>`;
+  const head = t => `<tr><th colspan="5" style="background:#e8eef8;font-size:13px">${esc(t)}</th></tr>`;
+  let rows = '';
+  tree().forEach(g => { const xs = S.entries.filter(x => x.group && sameG(x.group, g.path)).sort(byName); if (xs.length) rows += head(gIcon([g.path[0]]) + gLabel(g.path)) + xs.map(row).join(''); });
+  const none = S.entries.filter(x => !x.group).sort(byName);
+  if (none.length) rows += (S.groups.length ? head('Ohne Gruppe') : '') + none.map(row).join('');
   const w = window.open('', '_blank');
   if (!w) return alert('Bitte Pop-ups für diese Seite erlauben.');
   w.document.write(`<!doctype html><meta charset="utf-8"><title>Notfall-Liste</title><style>body{font:12px system-ui,sans-serif;margin:20px}table{border-collapse:collapse;width:100%}td,th{border:1px solid #999;padding:5px;text-align:left;vertical-align:top;word-break:break-word}</style><h2>Passwort-Notfall-Liste, Stand ${new Date().toLocaleString('de-CH')}</h2><table><tr><th>Wofür</th><th>Benutzer</th><th>Passwort</th><th>Webseite</th><th>Notiz</th></tr>${rows}</table>`);

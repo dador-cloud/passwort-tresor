@@ -32,7 +32,15 @@ Die YubiKeys sind in der Tresor-Datei gespeichert und funktionieren dadurch auto
 - Er sperrt sich sofort, wenn Sie auf **🔒 Sperren** klicken.
 - Unter ⚙️ Einstellungen → **«Automatisch sperren, wenn der PC gesperrt wird» → Einschalten**: Dann sperrt Windows-Taste + L auch den Tresor (solange die App offen ist, auch minimiert).
 
-## 5. Ohne Internet
+## 5. Gruppen und Favoriten
+- **Gruppen anlegen:** ⚙️ Einstellungen → «Gruppen verwalten» → Name (und optional ein Symbol wie 🏦) → «Gruppe anlegen». Für eine Untergruppe bei «Unter welcher Gruppe?» die Hauptgruppe wählen (z. B. «Firma › Kunden»).
+- **Schnell beim Erfassen:** Im Feld «Gruppe» ganz unten «+ Neue Gruppe …» wählen.
+- **Umbenennen / Reihenfolge / Löschen:** in «Gruppen verwalten» mit ✏️, ↑ ↓ und 🗑. Beim Löschen gehen keine Passwörter verloren, sie landen unter «Ohne Gruppe».
+- **Favoriten:** Auf den Stern ☆ bei einem Passwort klicken. Favoriten stehen immer zuoberst.
+- **Auf-/Zuklappen:** Auf die Überschrift einer Gruppe klicken. Die App merkt sich das.
+- **Suchen** findet alles, egal in welcher Gruppe, und zeigt an, wo der Eintrag liegt.
+
+## 6. Ohne Internet
 Im Datei-Explorer: Rechtsklick auf den OneDrive-Ordner **«Passwort-Tresor»** → **«Immer auf diesem Gerät behalten»** (grüner Kreis mit weissem Häkchen).
 
 ## Wichtig
