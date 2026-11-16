@@ -52,6 +52,11 @@ details.grp .gbody{padding:12px 0 0 10px;border-left:2px solid var(--line);margi
 details.grp.sub>summary{background:var(--card);font-weight:600}
 .gempty{font-size:.92rem;margin:0 0 8px}
 .gsub{padding-left:18px}
+.iconpick{flex:0 0 64px;text-align:center;cursor:pointer;caret-color:transparent;font-size:1.2rem}
+.epick{display:grid;grid-template-columns:repeat(auto-fill,minmax(44px,1fr));gap:4px;margin:8px 0;padding:8px;border:1px solid var(--line);border-radius:10px;background:var(--card);flex:1 1 100%}
+.epick .ebtn{min-width:44px;min-height:44px;padding:0;font-size:1.35rem;border-color:transparent;background:transparent}
+.epick .ebtn:hover,.epick .ebtn:focus-visible{background:color-mix(in srgb,var(--accent) 14%,transparent);border-color:var(--accent)}
+.epick .enone{grid-column:1/-1;font-size:.9rem;border-color:var(--line)}
 input:focus,textarea:focus,button:focus-visible{outline:3px solid color-mix(in srgb,var(--accent) 45%,transparent);outline-offset:1px}
 button{font:inherit;cursor:pointer;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--text);padding:9px 14px;min-height:44px;min-width:44px}
 button:disabled{opacity:.6;cursor:wait}
@@ -248,12 +253,12 @@ footer{font-size:.85rem;color:var(--muted);text-align:center;margin:20px 0}
   <form id="fAddGroup" class="msg info" style="margin-top:10px">
     <div style="font-weight:600">Neue Gruppe anlegen</div>
     <div class="row" style="margin-top:6px">
-      <input id="gIcon" maxlength="4" placeholder="🙂" aria-label="Symbol (optional)" title="Symbol (optional), z. B. 🏦" style="flex:0 0 64px;text-align:center">
+      <input id="gIcon" class="iconpick" readonly inputmode="none" placeholder="🙂" aria-label="Symbol wählen (optional)" title="Klicken, um ein Symbol zu wählen">
       <input id="gName" maxlength="40" required placeholder="Name, z. B. «Bank»" aria-label="Name der Gruppe" autocomplete="off" style="flex:1 1 160px;min-width:0">
     </div>
     <label for="gParent">Unter welcher Gruppe? (optional)</label>
     <select id="gParent"></select>
-    <p class="muted" style="font-size:.88rem;margin:6px 0">Symbol: z. B. 🏦 💳 🛒 💼 🏠 📧 (unter Windows mit Windows-Taste + Punkt).</p>
+    <p class="muted" style="font-size:.88rem;margin:6px 0">Tipp: Auf 🙂 klicken, um ein Symbol zu wählen.</p>
     <button class="primary small" type="submit">Gruppe anlegen</button>
   </form>
 
@@ -305,7 +310,7 @@ footer{font-size:.85rem;color:var(--muted);text-align:center;margin:20px 0}
 
 <script>
 "use strict";
-const VERSION = '2.1 (16.11.2026)';
+const VERSION = '2.2 (16.11.2026)';
 const $ = id => document.getElementById(id);
 const FS = 'showOpenFilePicker' in window && 'showSaveFilePicker' in window;
 const YK = (location.protocol === 'https:' || location.hostname === 'localhost') && !!window.PublicKeyCredential;
@@ -815,6 +820,39 @@ $('btnDelete').onclick = async () => {
   $('dlg').close(); render(); await save(); toast('Gelöscht');
 };
 
+/* ---------- Symbol-Auswahl für Gruppen ---------- */
+const EMOJIS = [['🏦','Bank'],['💳','Karten'],['💰','Geld'],['🧾','Rechnungen'],['📈','Anlagen'],['🛒','Einkaufen'],['🛍️','Shopping'],['📦','Pakete'],
+  ['💼','Firma'],['🏢','Büro'],['👥','Kunden'],['🤝','Partner'],['🏠','Zuhause'],['🔑','Zugänge'],['📧','E-Mail'],['💬','Chat'],
+  ['📱','Handy'],['💻','Computer'],['🌐','Internet'],['☁️','Cloud'],['🎮','Spiele'],['🎬','Filme'],['🎵','Musik'],['📺','TV'],
+  ['🚗','Auto'],['🚆','Zug'],['✈️','Reisen'],['🏨','Hotel'],['🏥','Gesundheit'],['💊','Apotheke'],['🛡️','Versicherung'],['🏛️','Behörden'],
+  ['📄','Dokumente'],['🎓','Schule'],['⚽','Sport'],['🍽️','Essen'],['👨‍👩‍👧','Familie'],['❤️','Privat'],['⭐','Wichtig'],['🔧','Technik'],
+  ['⚡','Energie'],['📷','Fotos'],['🐾','Haustiere'],['🔒','Sicherheit']];
+let pickFor = null;
+function closePicker(){ document.querySelectorAll('.epick').forEach(e => e.remove()); pickFor = null; }
+function openPicker(input){
+  if (pickFor === input) return;
+  closePicker(); pickFor = input;
+  const d = document.createElement('div'); d.className = 'epick'; d.setAttribute('role','listbox'); d.setAttribute('aria-label','Symbol wählen');
+  d.innerHTML = EMOJIS.map(([e,t]) => `<button type="button" class="ebtn" data-e="${e}" title="${t}" aria-label="${t}">${e}</button>`).join('') +
+    '<button type="button" class="ebtn enone" data-e="">Kein Symbol</button>';
+  d.addEventListener('click', ev => { const b = ev.target.closest('[data-e]'); if (!b) return;
+    input.value = b.dataset.e; const next = input.form && input.form.querySelector('input[name=name], #gName'); closePicker(); if (next) next.focus(); });
+  d.addEventListener('keydown', ev => { if (ev.key === 'Escape'){ ev.preventDefault(); ev.stopPropagation(); closePicker(); input.focus(); } });
+  input.closest('.row').after(d);
+}
+document.addEventListener('click', e => {
+  const inp = e.target.closest('.iconpick');
+  if (inp) return openPicker(inp);
+  if (pickFor && !e.target.closest('.epick')) closePicker();
+});
+document.addEventListener('keydown', e => { const inp = e.target.closest && e.target.closest('.iconpick');
+  if (inp && (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown')){ e.preventDefault(); openPicker(inp); const f = document.querySelector('.epick .ebtn'); f && f.focus(); }
+  else if (inp && (e.key === 'Backspace' || e.key === 'Delete')){ inp.value = ''; }
+});
+document.addEventListener('keydown', e => { if (pickFor && e.key === 'Escape' && document.querySelector('.epick')){ e.preventDefault(); e.stopPropagation(); const i = pickFor; closePicker(); i.focus(); } }, true);
+$('dlgSet').addEventListener('cancel', e => { if (pickFor && document.querySelector('.epick')){ e.preventDefault(); closePicker(); } });
+$('dlgSet').addEventListener('close', closePicker);
+
 /* ---------- Gruppen verwalten (Einstellungen) ---------- */
 let gEdit = null;
 function renderGroupAdmin(){
@@ -825,7 +863,7 @@ function renderGroupAdmin(){
     const k = gk(g.path), sib = g.path.length === 1 ? tops() : kids(findG([g.path[0]])), i = sib.indexOf(g);
     const n = S.entries.filter(x => inG(x, g.path)).length;
     if (gEdit === k) return `<div class="keyitem${g.path.length > 1 ? ' gsub' : ''}"><form class="gedit row" data-k="${esc(k)}" style="flex:1 1 100%">
-        <input name="icon" value="${esc(g.icon)}" maxlength="4" aria-label="Symbol" placeholder="🙂" style="flex:0 0 64px;text-align:center">
+        <input name="icon" class="iconpick" readonly inputmode="none" value="${esc(g.icon)}" aria-label="Symbol wählen" title="Klicken, um ein Symbol zu wählen" placeholder="🙂">
         <input name="name" value="${esc(g.path[g.path.length-1])}" aria-label="Name der Gruppe" required maxlength="40" style="flex:1 1 140px;min-width:0">
         <button class="small primary" type="submit">Speichern</button><button class="small" type="button" data-g="cancel">Abbrechen</button></form></div>`;
     return `<div class="keyitem${g.path.length > 1 ? ' gsub' : ''}"><div class="k">${g.path.length > 1 ? '↳ ' : ''}<strong>${esc(gName(g))}</strong> <span class="muted" style="font-size:.88rem">(${n})</span></div>

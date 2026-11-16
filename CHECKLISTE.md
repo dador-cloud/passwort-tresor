@@ -9,6 +9,7 @@
 - [x] GitHub-Projekt angelegt + Programm hochgeladen (14.11.2026)
 - [x] GitHub Pages eingeschaltet (Omar, 14.11.2026)
 - [x] Version 2.1: Gruppen mit Untergruppen, Favoriten, Suche über alle Gruppen, Auf-/Zuklappen (16.11.2026)
+- [x] Version 2.2: eigene Symbol-Auswahl für Gruppen (16.11.2026)
 - [ ] YubiKeys mit Omar am echten PC testen
 
 ## Nächste Ideen (noch nicht beauftragt)

@@ -33,7 +33,7 @@ Die YubiKeys sind in der Tresor-Datei gespeichert und funktionieren dadurch auto
 - Unter ⚙️ Einstellungen → **«Automatisch sperren, wenn der PC gesperrt wird» → Einschalten**: Dann sperrt Windows-Taste + L auch den Tresor (solange die App offen ist, auch minimiert).
 
 ## 5. Gruppen und Favoriten
-- **Gruppen anlegen:** ⚙️ Einstellungen → «Gruppen verwalten» → Name (und optional ein Symbol wie 🏦) → «Gruppe anlegen». Für eine Untergruppe bei «Unter welcher Gruppe?» die Hauptgruppe wählen (z. B. «Firma › Kunden»).
+- **Gruppen anlegen:** ⚙️ Einstellungen → «Gruppen verwalten» → optional auf 🙂 klicken und ein Symbol wählen → Name eintippen → «Gruppe anlegen». Für eine Untergruppe bei «Unter welcher Gruppe?» die Hauptgruppe wählen (z. B. «Firma › Kunden»).
 - **Schnell beim Erfassen:** Im Feld «Gruppe» ganz unten «+ Neue Gruppe …» wählen.
 - **Umbenennen / Reihenfolge / Löschen:** in «Gruppen verwalten» mit ✏️, ↑ ↓ und 🗑. Beim Löschen gehen keine Passwörter verloren, sie landen unter «Ohne Gruppe».
 - **Favoriten:** Auf den Stern ☆ bei einem Passwort klicken. Favoriten stehen immer zuoberst.
