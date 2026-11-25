@@ -11,14 +11,20 @@ Ohne YubiKey oder Hauptpasswort ist diese Datei nur Zeichensalat.
 | Entsperren | YubiKey berühren | Hauptpasswort |
 | Ohne Internet | ja | ja |
 
-## 1. App installieren (pro PC einmal)
+## 1. App starten – am einfachsten mit der Startdatei
+Im Tresor-Ordner auf OneDrive liegt **«Passwort-Tresor starten.cmd»**.
+- **Doppelklick** → die App öffnet sich als eigenes Fenster (Edge, sonst Chrome).
+- Beim ersten Mal auf einem PC entsteht zusätzlich ein Symbol **«Passwort-Tresor»** auf dem Desktop. Ab dann einfach dieses verwenden.
+- Zeigt Windows «Der Computer wurde durch Windows geschützt»: **«Weitere Informationen»** → **«Trotzdem ausführen»** (nur beim ersten Mal).
+
+## 1b. Alternative: App im Browser installieren (pro PC einmal)
 1. In **Edge** oder **Chrome** die Adresse der App öffnen (siehe unten).
 2. Oben rechts in der Adresszeile auf das Symbol **«App installieren»** klicken (Bildschirm mit Pfeil) und **«Installieren»** wählen.
 3. Fertig: Auf dem Desktop und im Startmenü erscheint «Passwort-Tresor».
 
 ## 2. Tresor verbinden
 - **Erster PC, noch kein Tresor:** «Neuen Tresor anlegen» → Hauptpasswort zweimal eingeben → im Speicher-Fenster **OneDrive → Passwort-Tresor** wählen → «Speichern».
-- **Zweiter PC / Tresor schon vorhanden:** «Bestehenden Tresor öffnen» → in OneDrive die Datei `Passwort-Tresor.json` wählen → entsperren.
+- **Zweiter PC / Tresor schon vorhanden:** YubiKey einstecken → «Bestehenden Tresor öffnen» → in OneDrive die Datei `Passwort-Tresor.json` wählen → **«Mit YubiKey entsperren»** → YubiKey berühren. Das Hauptpasswort brauchen Sie dafür nicht.
 - Fragt der Browser, ob die App die Datei bearbeiten darf: **«Bei jedem Besuch zulassen»** bzw. **«Zulassen»** wählen.
 
 ## 3. YubiKeys einrichten (einmal, nicht pro PC)
