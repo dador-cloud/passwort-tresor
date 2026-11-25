@@ -54,6 +54,11 @@ details.grp.sub>summary{background:var(--card);font-weight:600}
 .gsub{padding-left:18px}
 .linkbtn{border:0;background:transparent;color:var(--accent);text-decoration:underline;padding:8px 0;min-height:44px;font-size:.95rem;margin-top:6px}
 .btnlink{display:inline-flex;align-items:center;justify-content:center;text-decoration:none;border-radius:8px;padding:12px 18px;min-height:44px;font-weight:600;background:var(--accent);color:var(--accent-text);width:100%;text-align:center}
+.shake{animation:shake .4s}
+@keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
+@media (prefers-reduced-motion: reduce){.shake{animation:none}}
+input.bad{border-color:var(--danger);box-shadow:0 0 0 2px color-mix(in srgb,var(--danger) 30%,transparent)}
+.capswarn{color:var(--warn);font-size:.9rem;font-weight:600;margin-top:6px}
 .steps{margin:0;padding-left:22px}.steps li{margin-bottom:6px}
 .iconpick{flex:0 0 64px;text-align:center;cursor:pointer;caret-color:transparent;font-size:1.2rem}
 .epick{display:grid;grid-template-columns:repeat(auto-fill,minmax(44px,1fr));gap:4px;margin:8px 0;padding:8px;border:1px solid var(--line);border-radius:10px;background:var(--card);flex:1 1 100%}
@@ -200,8 +205,8 @@ footer{font-size:.85rem;color:var(--muted);text-align:center;margin:20px 0}
       <div class="pwrow"><input id="pwUnlock" type="password" autocomplete="current-password" required><button type="button" class="eye" data-for="pwUnlock" aria-label="Passwort anzeigen">👁</button></div>
       <div class="row" style="margin-top:12px"><button class="primary" type="submit">Entsperren</button></div>
     </form>
-    <div class="row" style="margin-top:12px"><button type="button" class="back">Zurück</button></div>
     <div id="errUnlock" class="msg err hidden"></div>
+    <div class="row" style="margin-top:12px"><button type="button" class="back">Zurück</button></div>
   </div>
 </section>
 
@@ -333,7 +338,7 @@ footer{font-size:.85rem;color:var(--muted);text-align:center;margin:20px 0}
 
 <script>
 "use strict";
-const VERSION = '2.3 (25.11.2026)';
+const VERSION = '2.4 (25.11.2026)';
 const $ = id => document.getElementById(id);
 const FS = 'showOpenFilePicker' in window && 'showSaveFilePicker' in window;
 const YK = (location.protocol === 'https:' || location.hostname === 'localhost') && !!window.PublicKeyCredential;
@@ -354,6 +359,28 @@ const rnd = n => crypto.getRandomValues(new Uint8Array(n));
 function show(id){ ['scrStart','scrNew','scrUnlock','scrMain'].forEach(s => $(s).classList.toggle('hidden', s !== id)); }
 function msg(id, text, cls='err'){ const e=$(id); e.textContent=text||''; e.className='msg ' + cls + (text ? '' : ' hidden'); }
 const err = (id, t) => msg(id, t, 'err');
+/* Falsches Passwort deutlich melden: Zähler, Wackeln, rotes Feld, Cursor zurück */
+const PW_WRONG = 'Das Hauptpasswort ist falsch.';
+let pwFails = 0;
+function pwWrong(errId, inputId){
+  pwFails++;
+  const e = $(errId);
+  msg(errId, pwFails > 1 ? `Das Hauptpasswort ist falsch (${pwFails}. Versuch). Bitte auf Gross-/Kleinschreibung achten.` : PW_WRONG, 'err');
+  e.setAttribute('role', 'alert');
+  e.classList.remove('shake'); void e.offsetWidth; e.classList.add('shake');
+  const i = $(inputId); if (i){ i.classList.add('bad'); i.value = ''; i.focus(); }
+}
+document.addEventListener('input', e => { if (e.target.classList && e.target.classList.contains('bad')) e.target.classList.remove('bad'); });
+/* Hinweis, wenn die Feststelltaste eingeschaltet ist */
+function capsCheck(e){
+  if (!e.target.matches || !e.target.matches('input[type=password]') || typeof e.getModifierState !== 'function') return;
+  const on = e.getModifierState('CapsLock');
+  const row = e.target.closest('.pwrow') || e.target;
+  if (on && !(row.nextElementSibling && row.nextElementSibling.classList.contains('capswarn'))){
+    const h = document.createElement('div'); h.className = 'capswarn'; h.setAttribute('role','status'); h.textContent = '⇪ Die Feststelltaste ist eingeschaltet.'; row.after(h); }
+  if (!on) document.querySelectorAll('.capswarn').forEach(x => x.remove());
+}
+document.addEventListener('keydown', capsCheck); document.addEventListener('keyup', capsCheck);
 let toastT; function toast(t){ const e=$('toast'); e.textContent=t; e.classList.remove('hidden'); clearTimeout(toastT); toastT=setTimeout(()=>e.classList.add('hidden'),2500); }
 function esc(s){ return String(s??'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function timeNow(){ return new Date().toLocaleTimeString('de-CH',{hour:'2-digit',minute:'2-digit'}); }
@@ -634,7 +661,8 @@ async function doUnlock(method, errId, btn, busyText){
       if (r.migrated){ await save(); toast('Tresor auf die neue Version umgestellt'); }
       await saveSession();
     } catch(x){
-      err(errId, x.name === 'NotFoundError' ? 'Die Datei wurde nicht gefunden (verschoben oder umbenannt?). Bitte «Anderen Tresor öffnen» wählen.' : ykError(x));
+      if (x.message === PW_WRONG) pwWrong(errId, errId === 'errLast' ? 'pwLast' : 'pwUnlock');
+      else err(errId, x.name === 'NotFoundError' ? 'Die Datei wurde nicht gefunden (verschoben oder umbenannt?). Bitte «Anderen Tresor öffnen» wählen.' : ykError(x));
     }
   });
 }
@@ -643,7 +671,7 @@ $('fUnlockLast').onsubmit = e => { e.preventDefault(); const pw = $('pwLast').va
 $('btnYkLast').onclick = e => doUnlock(unlockWithYk, 'errLast', e.currentTarget, 'YubiKey jetzt berühren …');
 $('btnYkUnlock').onclick = e => doUnlock(unlockWithYk, 'errUnlock', e.currentTarget, 'YubiKey jetzt berühren …');
 
-function enterMain(){ show('scrMain'); $('search').value=''; $('saveBar').classList.add('hidden'); updateYkBanner(); render(); }
+function enterMain(){ pwFails = 0; show('scrMain'); $('search').value=''; $('saveBar').classList.add('hidden'); updateYkBanner(); render(); }
 function updateYkBanner(){ $('ykBanner').classList.toggle('hidden', !(YK && S.vault && !ykKeys(S.vault).length)); }
 
 /* ---------- Sperren ---------- */
@@ -1015,7 +1043,7 @@ $('fReauth').onsubmit = async e => {
   e.preventDefault(); err('errReauth');
   const k = S.vault.keys.find(x => x.type === 'pw');
   try { const raw = await unwrap(await pwKek($('pwReauth').value, unb64(k.salt), k.iterations), k); $('pwReauth').value=''; await reauthDone(raw); }
-  catch { err('errReauth', 'Das Hauptpasswort ist falsch.'); }
+  catch { pwWrong('errReauth', 'pwReauth'); }
 };
 $('btnReauthYk').onclick = async () => {
   err('errReauth');
