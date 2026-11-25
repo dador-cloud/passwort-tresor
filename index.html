@@ -119,6 +119,13 @@ footer{font-size:.85rem;color:var(--muted);text-align:center;margin:20px 0}
     <a class="btnlink primary big" href="https://dador-cloud.github.io/passwort-tresor/" target="_blank" rel="noopener">App öffnen (mit YubiKey)</a>
   </div>
 
+  <!-- App installieren (erscheint nur, wenn der Browser es anbietet) -->
+  <div id="installBox" class="card hidden">
+    <h2>📥 Als App installieren</h2>
+    <p class="muted">Ein Klick: Danach haben Sie «Passwort-Tresor» als Symbol auf dem Desktop und im Startmenü. Keine Administratorrechte nötig.</p>
+    <button class="primary big installBtn" style="width:100%">📥 Als App installieren</button>
+  </div>
+
   <!-- Neuer PC: noch keine Datei bekannt -->
   <div id="firstBox" class="card hidden">
     <h2>Zum ersten Mal auf diesem PC?</h2>
@@ -326,6 +333,12 @@ footer{font-size:.85rem;color:var(--muted);text-align:center;margin:20px 0}
   <p id="idleState" class="muted" style="font-size:.92rem"></p>
   <button id="btnIdle" class="small">Einschalten</button>
 
+  <div id="installSet" class="hidden">
+    <h3>Als App installieren</h3>
+    <p class="muted" style="font-size:.92rem">Symbol auf Desktop und im Startmenü, ohne Administratorrechte.</p>
+    <button class="small primary installBtn">📥 Als App installieren</button>
+  </div>
+
   <h3>Notfall-Liste</h3>
   <p class="muted" style="font-size:.92rem">Alle Passwörter auf Papier, für den Tresor zu Hause.</p>
   <button id="btnPrint" class="small">🖨 Drucken</button>
@@ -338,7 +351,7 @@ footer{font-size:.85rem;color:var(--muted);text-align:center;margin:20px 0}
 
 <script>
 "use strict";
-const VERSION = '2.4 (25.11.2026)';
+const VERSION = '2.5 (25.11.2026)';
 const $ = id => document.getElementById(id);
 const FS = 'showOpenFilePicker' in window && 'showSaveFilePicker' in window;
 const YK = (location.protocol === 'https:' || location.hostname === 'localhost') && !!window.PublicKeyCredential;
@@ -538,7 +551,7 @@ async function saveManual(){
 
 /* ---------- Start ---------- */
 async function initStart(){
-  resetState(); show('scrStart');
+  resetState(); show('scrStart'); setTimeout(showInstall);
   document.querySelectorAll('.yk-only').forEach(e => e.classList.toggle('hidden', !YK));
   document.querySelectorAll('.no-yk').forEach(e => e.classList.toggle('hidden', YK));
   $('modeHint').textContent = FS
@@ -1020,7 +1033,7 @@ $('keyList').onclick = async e => {
   S.vault.keys.splice(+b.dataset.del, 1); renderKeys(); updateYkBanner(); await save(); toast('YubiKey entfernt');
 };
 function openSettings(){
-  gEdit = null; renderGroupAdmin(); renderKeys(); idleText(); $('ver').textContent = VERSION;
+  showInstall(); gEdit = null; renderGroupAdmin(); renderKeys(); idleText(); $('ver').textContent = VERSION;
   ['msgAddYk','msgChPw','errReauth'].forEach(id => msg(id,'')); $('reauthBox').classList.add('hidden');
   $('fAddYk').reset(); $('fChPw').reset();
   $('dlgSet').showModal();
@@ -1090,6 +1103,18 @@ $('btnPrint').onclick = () => {
   w.document.write(`<!doctype html><meta charset="utf-8"><title>Notfall-Liste</title><style>body{font:12px system-ui,sans-serif;margin:20px}table{border-collapse:collapse;width:100%}td,th{border:1px solid #999;padding:5px;text-align:left;vertical-align:top;word-break:break-word}</style><h2>Passwort-Notfall-Liste, Stand ${new Date().toLocaleString('de-CH')}</h2><table><tr><th>Wofür</th><th>Benutzer</th><th>Passwort</th><th>Webseite</th><th>Notiz</th></tr>${rows}</table>`);
   w.document.close(); w.focus(); w.print();
 };
+
+/* ---------- Als App installieren (Edge/Chrome, pro Benutzer, ohne Admin) ---------- */
+let installEvt = null;
+const isApp = () => matchMedia('(display-mode: standalone)').matches || matchMedia('(display-mode: window-controls-overlay)').matches || navigator.standalone === true;
+function showInstall(){ const can = !!installEvt && !isApp(); $('installBox').classList.toggle('hidden', !can || $('scrStart').classList.contains('hidden')); $('installSet').classList.toggle('hidden', !can); }
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEvt = e; showInstall(); });
+window.addEventListener('appinstalled', () => { installEvt = null; showInstall(); toast('✓ Installiert. Sie finden «Passwort-Tresor» auf dem Desktop und im Startmenü.'); });
+document.addEventListener('click', async e => {
+  if (!e.target.closest('.installBtn') || !installEvt) return;
+  const ev = installEvt;
+  try { await ev.prompt(); const r = await ev.userChoice; if (r && r.outcome === 'accepted'){ installEvt = null; showInstall(); } } catch {}
+});
 
 /* ---------- Offline-Betrieb (installierte App) ---------- */
 if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').catch(()=>{});

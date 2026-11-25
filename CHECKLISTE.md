@@ -12,7 +12,9 @@
 - [x] Version 2.2: eigene Symbol-Auswahl für Gruppen (16.11.2026)
 - [x] Version 2.3: Neuer PC direkt mit YubiKey, Reserve-Datei verweist auf App, Startdatei «Passwort-Tresor starten.cmd» (25.11.2026)
 - [x] Version 2.4: Falsches Passwort deutlicher (Zähler, Wackeln, rotes Feld), Hinweis Feststelltaste (25.11.2026)
-- [ ] Startdatei von Omar auf Windows-PC testen
+- [x] Startdatei .cmd verworfen (verlangte auf Omars PC Administratorrechte)
+- [x] Version 2.5: Knopf «Als App installieren» in der App + Verknüpfung «Passwort-Tresor öffnen.url» (25.11.2026)
+- [ ] Omar testet Installation per Knopf auf neuem PC
 - [ ] YubiKeys mit Omar am echten PC testen
 
 ## Nächste Ideen (noch nicht beauftragt)

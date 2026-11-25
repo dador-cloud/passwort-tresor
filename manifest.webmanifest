@@ -3,6 +3,7 @@
   "short_name": "Tresor",
   "description": "Passwörter verschlüsselt auf OneDrive, Entsperren mit YubiKey.",
   "lang": "de-CH",
+  "id": "./",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
