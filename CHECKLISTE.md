@@ -15,7 +15,7 @@
 - [x] Startdatei .cmd verworfen (verlangte auf Omars PC Administratorrechte)
 - [x] Version 2.5: Knopf «Als App installieren» in der App + Verknüpfung «Passwort-Tresor öffnen.url» (25.11.2026)
 - [ ] Omar testet Installation per Knopf auf neuem PC
-- [ ] Anleitung als übersichtliche HTML-Datei statt ANLEITUNG.md (Wunsch Omar, 25.11.2026, nicht dringend)
+- [ ] ANLEITUNG übersichtlich und luftig gestalten (Regeln in CLAUDE.md) (Wunsch Omar, 25.11.2026, nicht dringend)
 - [ ] YubiKeys mit Omar am echten PC testen
 
 ## Nächste Ideen (noch nicht beauftragt)
