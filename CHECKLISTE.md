@@ -15,7 +15,9 @@
 - [x] Startdatei .cmd verworfen (verlangte auf Omars PC Administratorrechte)
 - [x] Version 2.5: Knopf «Als App installieren» in der App + Verknüpfung «Passwort-Tresor öffnen.url» (25.11.2026)
 - [ ] Omar testet Installation per Knopf auf neuem PC
-- [ ] ANLEITUNG übersichtlich und luftig gestalten (Regeln in CLAUDE.md) (Wunsch Omar, 25.11.2026, nicht dringend)
+- [x] Version 2.6: Entsperren zeigt Schritte, Hinweis wenn Erlaubnis/OneDrive hängt, erneuter Versuch möglich (26.11.2026)
+- [ ] Omar prüft Mini-PC (App hing bei «YubiKey jetzt berühren …»)
+- [x] ANLEITUNG übersichtlich und luftig gestaltet (26.11.2026) (Wunsch Omar, 25.11.2026, nicht dringend)
 - [ ] YubiKeys mit Omar am echten PC testen
 
 ## Nächste Ideen (noch nicht beauftragt)
