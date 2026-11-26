@@ -18,7 +18,9 @@
 - [x] Version 2.6: Entsperren zeigt Schritte, Hinweis wenn Erlaubnis/OneDrive hängt, erneuter Versuch möglich (26.11.2026)
 - [x] Ursache Mini-PC: Erlaubnis-Frage des Browsers im App-Fenster unsichtbar (Hinweis Omar)
 - [x] Version 2.7: Statt unsichtbarer Frage «Tresor-Ordner bestätigen» (Windows-Ordnerwahl); «Bestehenden Tresor öffnen» wählt Ordner (26.11.2026)
-- [ ] Omar testet 2.7 auf Mini-PC und neuem PC
+- [x] Mini-PC: gespeicherter Ort war veraltet (Ordner verschoben); mit «Anderen Tresor öffnen» gelöst (Omar)
+- [x] Version 2.8: Bei verschobener Datei Knopf «Tresor-Ordner neu wählen» direkt in der Meldung (26.11.2026)
+- [ ] Omar testet 2.8 nach PC-Neustart
 - [x] ANLEITUNG übersichtlich und luftig gestaltet (26.11.2026) (Wunsch Omar, 25.11.2026, nicht dringend)
 - [ ] YubiKeys mit Omar am echten PC testen
 

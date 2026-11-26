@@ -1,5 +1,5 @@
 PASSWORT-TRESOR – ANLEITUNG
-Version 2.7  ·  Stand 26.11.2026, 11:41 Uhr
+Version 2.8  ·  Stand 26.11.2026, 11:53 Uhr
 ======================================================================
 
 
@@ -158,10 +158,11 @@ Knopf zeigt «Datei wird gelesen …» und es passiert nichts:
    (Wolke unten rechts, nicht pausiert), und siehe Punkt 7.
 
 
-«Die Datei wurde nicht gefunden»:
+«Die Tresor-Datei liegt nicht mehr am gespeicherten Ort»:
 
    Die Datei wurde verschoben oder umbenannt.
-   «Anderen Tresor öffnen» → den Ordner am neuen Ort wählen.
+   Auf «Tresor-Ordner neu wählen» klicken, den neuen Ordner wählen
+   und «Ordner auswählen». Die App merkt sich den neuen Ort.
 
 
 

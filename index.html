@@ -351,7 +351,7 @@ footer{font-size:.85rem;color:var(--muted);text-align:center;margin:20px 0}
 
 <script>
 "use strict";
-const VERSION = '2.7 (26.11.2026)';
+const VERSION = '2.8 (26.11.2026)';
 const $ = id => document.getElementById(id);
 const FS = 'showOpenFilePicker' in window && 'showSaveFilePicker' in window;
 const YK = (location.protocol === 'https:' || location.hostname === 'localhost') && !!window.PublicKeyCredential;
@@ -590,7 +590,7 @@ async function openSession(sess){
     enterMain(); setStatus('ok', '✓ Verbunden mit «' + S.fileName + '»');
   } catch(x){
     if (x.code === 'NEED_FOLDER'){ $('sessBox').classList.remove('hidden'); needFolder('errSess', () => openSession(sess)); return; }
-    if (x.name === 'NotFoundError'){ await kvDel('session'); }
+    if (x.name === 'NotFoundError'){ $('sessBox').classList.remove('hidden'); needFolder('errSess', () => openSession(sess), true); return; }
     $('sessBox').classList.remove('hidden');
     err('errSess', x.name === 'NotFoundError' ? 'Die Datei wurde nicht gefunden (verschoben oder umbenannt?). Bitte «Anderen Tresor öffnen» wählen.' : x.message);
     if (/passt nicht/.test(x.message)){ await kvDel('session'); $('sessBox').classList.add('hidden'); $('lastBox').classList.remove('hidden'); }
@@ -699,16 +699,17 @@ async function pickFolder(startIn){
 }
 const FOLDER_TEXT = 'Bitte einmal den Tresor-Ordner bestätigen, damit die App die Tresor-Datei bearbeiten darf: Auf den Knopf klicken, im Windows-Fenster den Ordner wählen, in dem «Passwort-Tresor.json» liegt, und «Ordner auswählen» klicken. Fragt der Browser danach, ob Dateien bearbeitet werden dürfen: «Dateien bearbeiten» bzw. «Zulassen».';
 let folderRetry = null;
-function needFolder(errId, retry){
+const MOVED_TEXT = 'Die Tresor-Datei liegt nicht mehr am gespeicherten Ort (wurde sie verschoben oder umbenannt?). Bitte den Ordner wählen, in dem «Passwort-Tresor.json» jetzt liegt: Auf den Knopf klicken, den Ordner anklicken und «Ordner auswählen». Die App merkt sich den neuen Ort.';
+function needFolder(errId, retry, moved){
   folderRetry = retry;
-  const e = $(errId); e.className = 'msg info'; e.removeAttribute('role');
-  e.innerHTML = esc(FOLDER_TEXT) + '<div class="row" style="margin-top:10px"><button type="button" class="primary folderBtn">📂 Tresor-Ordner bestätigen</button></div><div class="folderErr msg err hidden"></div>';
+  const e = $(errId); e.className = moved ? 'msg warn' : 'msg info'; e.removeAttribute('role');
+  e.innerHTML = esc(moved ? MOVED_TEXT : FOLDER_TEXT) + `<div class="row" style="margin-top:10px"><button type="button" class="primary folderBtn"${moved ? ' data-moved="1"' : ''}>📂 Tresor-Ordner ${moved ? 'neu wählen' : 'bestätigen'}</button></div><div class="folderErr msg err hidden"></div>`;
 }
 document.addEventListener('click', async e => {
   const b = e.target.closest('.folderBtn'); if (!b) return;
   const box = b.closest('.msg'); const fe = box && box.querySelector('.folderErr');
   try {
-    const fh = await pickFolder(S.handle || undefined);
+    const fh = await pickFolder(b.dataset.moved ? undefined : (S.handle || undefined)); // alter Ort existiert nicht mehr: nicht dort starten
     if (!fh) return;
     attempt++; unlocking = false; slowShown = false; resetUnlockBtns();
     const r = folderRetry; folderRetry = null;
@@ -755,6 +756,7 @@ async function doUnlock(method, errId, btn, busyText){
     if (my !== attempt) return;
     if (x.code === 'NEED_FOLDER'){ needFolder(errId, () => doUnlock(method, errId, btn, busyText)); return; }
     if (x.message === PW_WRONG) pwWrong(errId, errId === 'errLast' ? 'pwLast' : 'pwUnlock');
+    else if (x.name === 'NotFoundError' && HAS_DIR) needFolder(errId, () => doUnlock(method, errId, btn, busyText), true);
     else err(errId, x.name === 'NotFoundError' ? 'Die Datei wurde nicht gefunden (verschoben oder umbenannt?). Bitte «Anderen Tresor öffnen» wählen.' : ykError(x));
   } finally { if (my === attempt){ unlocking = false; resetUnlockBtns(); } }
 }
