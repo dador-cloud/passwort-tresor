@@ -16,7 +16,9 @@
 - [x] Version 2.5: Knopf «Als App installieren» in der App + Verknüpfung «Passwort-Tresor öffnen.url» (25.11.2026)
 - [ ] Omar testet Installation per Knopf auf neuem PC
 - [x] Version 2.6: Entsperren zeigt Schritte, Hinweis wenn Erlaubnis/OneDrive hängt, erneuter Versuch möglich (26.11.2026)
-- [ ] Omar prüft Mini-PC (App hing bei «YubiKey jetzt berühren …»)
+- [x] Ursache Mini-PC: Erlaubnis-Frage des Browsers im App-Fenster unsichtbar (Hinweis Omar)
+- [x] Version 2.7: Statt unsichtbarer Frage «Tresor-Ordner bestätigen» (Windows-Ordnerwahl); «Bestehenden Tresor öffnen» wählt Ordner (26.11.2026)
+- [ ] Omar testet 2.7 auf Mini-PC und neuem PC
 - [x] ANLEITUNG übersichtlich und luftig gestaltet (26.11.2026) (Wunsch Omar, 25.11.2026, nicht dringend)
 - [ ] YubiKeys mit Omar am echten PC testen
 

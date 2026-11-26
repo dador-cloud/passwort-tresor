@@ -132,7 +132,7 @@ footer{font-size:.85rem;color:var(--muted);text-align:center;margin:20px 0}
     <ol class="steps">
       <li>YubiKey einstecken.</li>
       <li>Unten auf <strong>«Bestehenden Tresor öffnen»</strong> klicken.</li>
-      <li>Links <strong>OneDrive</strong> wählen, Ihren Tresor-Ordner öffnen und <strong>Passwort-Tresor.json</strong> anklicken.</li>
+      <li>Links <strong>OneDrive</strong> wählen, Ihren <strong>Tresor-Ordner</strong> anklicken (den Ordner, in dem «Passwort-Tresor.json» liegt) und auf <strong>«Ordner auswählen»</strong> klicken. Fragt der Browser, ob Dateien bearbeitet werden dürfen: <strong>«Dateien bearbeiten»</strong>.</li>
       <li>Auf <strong>«Mit YubiKey entsperren»</strong> klicken und den YubiKey berühren.</li>
     </ol>
   </div>
@@ -351,7 +351,7 @@ footer{font-size:.85rem;color:var(--muted);text-align:center;margin:20px 0}
 
 <script>
 "use strict";
-const VERSION = '2.6 (26.11.2026)';
+const VERSION = '2.7 (26.11.2026)';
 const $ = id => document.getElementById(id);
 const FS = 'showOpenFilePicker' in window && 'showSaveFilePicker' in window;
 const YK = (location.protocol === 'https:' || location.hostname === 'localhost') && !!window.PublicKeyCredential;
@@ -573,6 +573,7 @@ async function initStart(){
     // Heute schon entsperrt: wenn der Browser die Datei-Erlaubnis noch hat, direkt öffnen
     try { if ((await h.queryPermission({mode:'readwrite'})) === 'granted') return openSession(sess); } catch {}
     $('sessBox').classList.remove('hidden');
+    if (isApp()) needFolder('errSess', () => openSession(sess)); // im App-Fenster direkt Ordner bestätigen lassen
     return;
   }
   $('lastBox').classList.remove('hidden');
@@ -580,6 +581,7 @@ async function initStart(){
   if (!YK) setTimeout(()=>$('pwLast').focus(), 50);
 }
 async function openSession(sess){
+  folderRetry = () => openSession(sess);
   try {
     const btn = $('btnSess'), old = btn.textContent; btn.disabled = true;
     try { await readHandle('errSess', t => { btn.textContent = t; }); } finally { btn.disabled = false; btn.textContent = old; }
@@ -587,6 +589,7 @@ async function openSession(sess){
     Object.assign(S, await decryptPayload(sess.dek, v)); normalizeGroups(); S.vault = v; S.dek = sess.dek; S.dekRaw = null;
     enterMain(); setStatus('ok', '✓ Verbunden mit «' + S.fileName + '»');
   } catch(x){
+    if (x.code === 'NEED_FOLDER'){ $('sessBox').classList.remove('hidden'); needFolder('errSess', () => openSession(sess)); return; }
     if (x.name === 'NotFoundError'){ await kvDel('session'); }
     $('sessBox').classList.remove('hidden');
     err('errSess', x.name === 'NotFoundError' ? 'Die Datei wurde nicht gefunden (verschoben oder umbenannt?). Bitte «Anderen Tresor öffnen» wählen.' : x.message);
@@ -624,7 +627,11 @@ $('fNew').onsubmit = async e => {
 
 $('btnOpen').onclick = async () => {
   await kvDel('session');
-  if (FS){
+  if (FS && HAS_DIR){
+    const keep = S.handle; resetState();
+    try { if (!(await pickFolder(keep || undefined))){ initStart(); return; } }
+    catch(x){ alert(x.message); initStart(); return; }
+  } else if (FS){
     let h;
     try { [h] = await showOpenFilePicker({types:FILE_TYPES}); }
     catch(x){ if (x.name !== 'AbortError') alert('Datei konnte nicht geöffnet werden: ' + x.message); return; }
@@ -661,20 +668,62 @@ async function gotoUnlock(){
 
 /* Gemeinsamer Entsperr-Ablauf: method = (vault) => {raw, entries, migrated?} */
 /* Schritte beim Entsperren sichtbar machen; wenn etwas hängt, nach ein paar Sekunden erklären, was zu tun ist */
-const PERM_HINT = 'Die App wartet auf Ihre Erlaubnis, die Tresor-Datei zu bearbeiten. Bitte oben im Fenster bzw. neben der Adresszeile auf «Bei jedem Besuch zulassen» oder «Zulassen» klicken. Sehen Sie keine Frage: nochmals auf «Mit YubiKey entsperren» bzw. «Entsperren» klicken oder die App neu laden.';
+const PERM_HINT = 'Der Browser fragt neben der Adresszeile, ob die Tresor-Datei bearbeitet werden darf. Bitte «Bei jedem Besuch zulassen» oder «Zulassen» klicken. Sehen Sie keine Frage, bestätigen Sie stattdessen den Tresor-Ordner:';
 const FILE_HINT = 'Die Tresor-Datei wird noch von OneDrive geladen. Bitte prüfen: Läuft OneDrive (Wolke unten rechts in der Taskleiste, nicht pausiert)? Tipp: Im Explorer Rechtsklick auf den Tresor-Ordner → «Immer auf diesem Gerät behalten».';
 let slowShown = false;
 function slowHint(errId, text){
   slowShown = true; if (typeof resetUnlockBtns === 'function') resetUnlockBtns(); // nochmals klicken erlaubt
   const e = $(errId); e.className = 'msg warn'; e.setAttribute('role', 'alert');
-  e.innerHTML = esc(text) + '<div class="row" style="margin-top:8px"><button type="button" class="small reloadBtn">↻ App neu laden</button></div>';
+  e.innerHTML = esc(text) + '<div class="row" style="margin-top:8px">' + (text === PERM_HINT ? '<button type="button" class="small primary folderBtn">📂 Tresor-Ordner bestätigen</button>' : '') + '<button type="button" class="small reloadBtn">↻ App neu laden</button></div>';
 }
+/* Ordner bestätigen: normales Windows-Fenster, danach darf die App die Tresor-Datei bearbeiten */
+const HAS_DIR = 'showDirectoryPicker' in window;
+async function findVaultIn(dir, preferName){
+  for (const n of [preferName, 'Passwort-Tresor.json']) { if (!n) continue; try { return await dir.getFileHandle(n); } catch {} }
+  for await (const [name, h] of dir.entries()){
+    if (h.kind !== 'file' || !name.toLowerCase().endsWith('.json')) continue;
+    try { if (JSON.parse(await (await h.getFile()).text()).app === 'Passwort-Tresor') return h; } catch {}
+  }
+  return null;
+}
+async function pickFolder(startIn){
+  let dir;
+  const opts = { id:'tresor', mode:'readwrite' };
+  try { dir = await showDirectoryPicker(startIn ? { ...opts, startIn } : opts); }
+  catch(x){ if (x.name === 'AbortError') return null; if (!startIn) throw x; dir = await showDirectoryPicker(opts); }
+  const fh = await findVaultIn(dir, S.fileName);
+  if (!fh) throw new Error('In diesem Ordner liegt keine Tresor-Datei. Bitte den Ordner wählen, in dem «Passwort-Tresor.json» liegt.');
+  S.handle = fh; S.fileName = fh.name; await kvSet('lastHandle', fh);
+  document.querySelectorAll('.lastName').forEach(e => e.textContent = fh.name);
+  return fh;
+}
+const FOLDER_TEXT = 'Bitte einmal den Tresor-Ordner bestätigen, damit die App die Tresor-Datei bearbeiten darf: Auf den Knopf klicken, im Windows-Fenster den Ordner wählen, in dem «Passwort-Tresor.json» liegt, und «Ordner auswählen» klicken. Fragt der Browser danach, ob Dateien bearbeitet werden dürfen: «Dateien bearbeiten» bzw. «Zulassen».';
+let folderRetry = null;
+function needFolder(errId, retry){
+  folderRetry = retry;
+  const e = $(errId); e.className = 'msg info'; e.removeAttribute('role');
+  e.innerHTML = esc(FOLDER_TEXT) + '<div class="row" style="margin-top:10px"><button type="button" class="primary folderBtn">📂 Tresor-Ordner bestätigen</button></div><div class="folderErr msg err hidden"></div>';
+}
+document.addEventListener('click', async e => {
+  const b = e.target.closest('.folderBtn'); if (!b) return;
+  const box = b.closest('.msg'); const fe = box && box.querySelector('.folderErr');
+  try {
+    const fh = await pickFolder(S.handle || undefined);
+    if (!fh) return;
+    attempt++; unlocking = false; slowShown = false; resetUnlockBtns();
+    const r = folderRetry; folderRetry = null;
+    if (r) r(); else location.reload();
+  } catch(x){ if (fe){ fe.textContent = x.message; fe.classList.remove('hidden'); } else toast(x.message); }
+});
 document.addEventListener('click', e => { if (e.target.closest('.reloadBtn')) location.reload(); });
 async function step(promise, ms, errId, text){ const t = setTimeout(() => slowHint(errId, text), ms); try { return await promise; } finally { clearTimeout(t); } }
 /* Datei-Erlaubnis + Datei lesen, mit Hinweisen */
 async function readHandle(errId, setText){
   setText('Erlaubnis für die Datei …');
-  if (!(await step(ensurePermission(S.handle), 4000, errId, PERM_HINT))) throw new Error('Ohne Erlaubnis kann der Tresor nicht speichern. Bitte beim nächsten Versuch «Zulassen» wählen.');
+  const granted = (await S.handle.queryPermission({mode:'readwrite'})) === 'granted';
+  // Im App-Fenster erscheint die Erlaubnis-Frage des Browsers nicht sichtbar: dort den Ordner bestätigen lassen
+  if (!granted && (isApp() || !('requestPermission' in S.handle))){ const e = new Error('NEED_FOLDER'); e.code = 'NEED_FOLDER'; throw e; }
+  if (!granted && !(await step(ensurePermission(S.handle), 4000, errId, PERM_HINT))){ const e = new Error('NEED_FOLDER'); e.code = 'NEED_FOLDER'; throw e; }
   setText('Datei wird gelesen …');
   const f = await step(S.handle.getFile(), 6000, errId, FILE_HINT);
   S.fileText = await step(f.text(), 6000, errId, FILE_HINT); S.lastMod = f.lastModified;
@@ -688,6 +737,7 @@ let attempt = 0, unlocking = false;
 async function doUnlock(method, errId, btn, busyText){
   if (unlocking && !slowShown){ toast('Bitte warten, der Tresor wird gerade geöffnet …'); return; }
   const my = ++attempt; unlocking = true; slowShown = false;
+  folderRetry = () => doUnlock(method, errId, btn, busyText); // falls der Ordner bestätigt werden muss
   resetUnlockBtns(); err('errLast'); err('errUnlock');
   btn.disabled = true;
   const setText = t => { if (my === attempt) btn.textContent = t; };
@@ -703,6 +753,7 @@ async function doUnlock(method, errId, btn, busyText){
     await saveSession();
   } catch(x){
     if (my !== attempt) return;
+    if (x.code === 'NEED_FOLDER'){ needFolder(errId, () => doUnlock(method, errId, btn, busyText)); return; }
     if (x.message === PW_WRONG) pwWrong(errId, errId === 'errLast' ? 'pwLast' : 'pwUnlock');
     else err(errId, x.name === 'NotFoundError' ? 'Die Datei wurde nicht gefunden (verschoben oder umbenannt?). Bitte «Anderen Tresor öffnen» wählen.' : ykError(x));
   } finally { if (my === attempt){ unlocking = false; resetUnlockBtns(); } }

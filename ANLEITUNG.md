@@ -1,5 +1,5 @@
 PASSWORT-TRESOR – ANLEITUNG
-Version 2.6  ·  Stand 26.11.2026, 11:06 Uhr
+Version 2.7  ·  Stand 26.11.2026, 11:41 Uhr
 ======================================================================
 
 
@@ -53,14 +53,16 @@ TIPP: Erscheint der Knopf nicht, ist die App auf diesem PC schon
 
 2. In der App auf «Bestehenden Tresor öffnen» klicken.
 
-3. Links «OneDrive» wählen, den Tresor-Ordner öffnen und
-   «Passwort-Tresor.json» anklicken.
+3. Im Windows-Fenster links «OneDrive» wählen und den Tresor-Ordner
+   anklicken (den Ordner, in dem «Passwort-Tresor.json» liegt).
 
-4. Auf «Mit YubiKey entsperren» klicken und den YubiKey berühren,
+4. Unten auf «Ordner auswählen» klicken.
+
+5. Fragt der Browser, ob Dateien bearbeitet werden dürfen:
+   «Dateien bearbeiten» bzw. «Zulassen».
+
+6. Auf «Mit YubiKey entsperren» klicken und den YubiKey berühren,
    sobald er blinkt.
-
-5. Fragt die App, ob sie die Datei bearbeiten darf:
-   «Bei jedem Besuch zulassen» wählen.
 
 Das Hauptpasswort brauchen Sie dafür nicht.
 
@@ -132,25 +134,34 @@ Favoriten:
 
 
 
-8. WENN ETWAS HÄNGT
+8. WENN DIE APP NACH DEM TRESOR-ORDNER FRAGT
 ----------------------------------------------------------------------
 
-Knopf zeigt «Erlaubnis für die Datei …» und es passiert nichts:
+Das ist normal, z. B. nach einem Neustart des PCs. Der Browser
+vergisst manchmal, dass die App die Datei bearbeiten darf.
 
-   Die App wartet auf Ihre Erlaubnis. Oben im Fenster erscheint eine
-   kleine Frage → «Bei jedem Besuch zulassen».
-   Sehen Sie keine Frage: nochmals auf «Mit YubiKey entsperren»
-   klicken oder «App neu laden».
+1. Auf «Tresor-Ordner bestätigen» klicken.
+
+2. Im Windows-Fenster den Tresor-Ordner anklicken
+   (meist ist er schon ausgewählt).
+
+3. «Ordner auswählen» klicken.
+
+4. Fragt der Browser nach: «Dateien bearbeiten» bzw. «Zulassen».
+
+Danach geht es automatisch weiter.
+
 
 Knopf zeigt «Datei wird gelesen …» und es passiert nichts:
 
    OneDrive liefert die Datei nicht. Prüfen Sie, ob OneDrive läuft
    (Wolke unten rechts, nicht pausiert), und siehe Punkt 7.
 
+
 «Die Datei wurde nicht gefunden»:
 
    Die Datei wurde verschoben oder umbenannt.
-   «Anderen Tresor öffnen» → die Datei am neuen Ort wählen.
+   «Anderen Tresor öffnen» → den Ordner am neuen Ort wählen.
 
 
 
